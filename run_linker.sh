@@ -59,4 +59,6 @@ else
   [ -z "$last_line" ] && last_line="完了"
   notify_osascript "Notion Linker" "成功" "$last_line"
   notify_slack "成功: $last_line"
+  # 成功時は直近エラーログを空にして古いエラー表示の混在を防ぐ
+  : > "$err"
 fi

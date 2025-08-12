@@ -166,12 +166,13 @@ def main():
     # 支払予定日が入っているページを期間制限で取得
     filter_obj = {"property": PROP_PAY_DATE, "date": {"is_not_empty": True}}
     if RECHECK_DAYS and RECHECK_DAYS > 0:
-        # コメントや処理
         since = (datetime.now(timezone.utc) - timedelta(days=RECHECK_DAYS)).date().isoformat()
-        filter_obj = {"and": [
-            {"property": PROP_PAY_DATE, "date": {"is_not_empty": True}},
-            {"property": PROP_PAY_DATE, "date": {"on_or_after": since}},
-        ]}
+        filter_obj = {
+            "and": [
+                {"property": PROP_PAY_DATE, "date": {"is_not_empty": True}},
+                {"property": PROP_PAY_DATE, "date": {"on_or_after": since}},
+            ]
+        }
 
     pages = list(iter_database_pages(PAY_DB_ID, filter_obj))
     if not pages:
