@@ -1,0 +1,49 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.notion-linker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>cd '"'"$HOME/NotionLinker"'"' && source venv/bin/activate && python link_diary.py</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>NOTION_TOKEN</key>
+        <string>__SET_IN_ENV__</string>
+        <key>PAY_DB_ID</key>
+        <string>__SET_IN_ENV__</string>
+        <key>JOURNAL_DB_ID</key>
+        <string>__SET_IN_ENV__</string>
+        <key>PROP_PAY_DATE</key>
+        <string>支払予定日</string>
+        <key>PROP_MATCH_STR</key>
+        <string>一致用日付</string>
+        <key>PROP_REL_TO_JOURNAL</key>
+        <string>日記[予定日]</string>
+        <key>PROP_JOURNAL_TITLE</key>
+        <string>名前</string>
+    </dict>
+
+    <!-- 毎時00分に実行 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/notion-linker.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/notion-linker.err.log</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
