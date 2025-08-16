@@ -121,6 +121,7 @@ def iter_database_pages(database_id: str, filter_obj: Optional[Dict[str, Any]] =
         start_cursor = res.get("next_cursor")
 
 def find_journal_by_match(match_text: str) -> Optional[Dict[str, Any]]:
+    # まず一致用日付プロパティで検索
     def _call():
         return notion.databases.query(
             **{
@@ -131,15 +132,50 @@ def find_journal_by_match(match_text: str) -> Optional[Dict[str, Any]]:
         )
     res = with_retry(_call, what="journal.query")
     arr = res.get("results", [])
-    return arr[0] if arr else None
+    if arr:
+        return arr[0]
+    
+    # 一致用日付で見つからない場合、タイトルで検索
+    # 「2025-08-16」形式を「2025-0816」形式に変換
+    import re
+    pattern = r'^(\d{4})-(\d{2})-(\d{2})$'
+    match = re.match(pattern, match_text)
+    if match:
+        year, month, day = match.groups()
+        title_format = f"{year}-{month}{day}"
+        
+        def _call2():
+            return notion.databases.query(
+                **{
+                    "database_id": JOURNAL_DB_ID,
+                    "filter": {"property": PROP_JOURNAL_TITLE, "title": {"equals": title_format}},
+                    "page_size": 1,
+                }
+            )
+        res2 = with_retry(_call2, what="journal.query")
+        arr2 = res2.get("results", [])
+        if arr2:
+            return arr2[0]
+    
+    return None
 
 def create_journal_page(match_text: str) -> Dict[str, Any]:
+    # 「2025-08-16」形式を「2025-0816」形式に変換
+    import re
+    pattern = r'^(\d{4})-(\d{2})-(\d{2})$'
+    match = re.match(pattern, match_text)
+    if match:
+        year, month, day = match.groups()
+        title_format = f"{year}-{month}{day}"
+    else:
+        title_format = match_text  # 変換できない場合はそのまま
+    
     props = {
-        PROP_JOURNAL_TITLE: {"title": [{"type": "text", "text": {"content": match_text}}]},
+        PROP_JOURNAL_TITLE: {"title": [{"type": "text", "text": {"content": title_format}}]},
         # 一致用日付は formula 想定のため書かない
     }
     if DRY_RUN:
-        print(f"[DRY-RUN] Create Journal page: title={match_text}")
+        print(f"[DRY-RUN] Create Journal page: title={title_format} (from {match_text})")
         return {"id": "dry-run-journal-id"}
     def _call():
         return notion.pages.create(**{"parent": {"database_id": JOURNAL_DB_ID}, "properties": props})
@@ -215,7 +251,24 @@ def main():
                 jmatch = get_prop_val(jprops[PROP_MATCH_STR])
             if not jmatch and PROP_JOURNAL_TITLE in jprops:
                 jmatch = get_prop_val(jprops[PROP_JOURNAL_TITLE])
-            if jmatch != match_text:
+            
+            # 日付形式の比較（「2025-08-16」と「2025-0816」を同等に扱う）
+            import re
+            def normalize_date(date_str):
+                if not date_str:
+                    return None
+                # 「2025-0816」形式を「2025-08-16」形式に変換
+                pattern = r'^(\d{4})-(\d{2})(\d{2})$'
+                match = re.match(pattern, date_str)
+                if match:
+                    year, month, day = match.groups()
+                    return f"{year}-{month}-{day}"
+                return date_str
+            
+            normalized_jmatch = normalize_date(jmatch)
+            normalized_match_text = normalize_date(match_text)
+            
+            if normalized_jmatch != normalized_match_text:
                 needs_link = True
                 reason = f"日付変更（現在:{jmatch}→期待:{match_text}）"
 
