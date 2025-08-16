@@ -4,9 +4,16 @@ set -euo pipefail
 cd "$HOME/NotionLinker"
 
 # .env を反映
-set -a
-[ -f ".env" ] && source .env
-set +a
+if [ -f ".env" ]; then
+    echo "Loading .env file..."
+    set -a
+    source .env
+    set +a
+    echo "NOTION_TOKEN loaded: ${NOTION_TOKEN:0:10}..."
+else
+    echo "ERROR: .env file not found!"
+    exit 1
+fi
 
 source venv/bin/activate
 
