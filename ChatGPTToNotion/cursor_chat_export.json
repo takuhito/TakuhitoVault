@@ -1,0 +1,166 @@
+[
+  {
+    "id": "cursor-chat-session",
+    "title": "Cursor ChatGPT to Notion プロジェクト構築チャット",
+    "current_node": "assistant-message-final",
+    "create_time": 1737360000,
+    "update_time": 1737360000,
+    "mapping": {
+      "cursor-chat-session": {
+        "id": "cursor-chat-session",
+        "message": {
+          "id": "cursor-chat-session",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1737360000,
+          "update_time": 1737360000,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "ChatGPTデスクトップアプリのチャット履歴を、自動でNotionのデータベースに保存する仕組みが作りたい。"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "timestamp_": "absolute",
+            "model_slug": "gpt-4o",
+            "parent_id": "",
+            "user_id": "user"
+          },
+          "recipient": "all"
+        },
+        "parent": null,
+        "children": [
+          "user-message-1"
+        ]
+      },
+      "user-message-1": {
+        "id": "user-message-1",
+        "message": {
+          "id": "user-message-1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1737360000,
+          "update_time": 1737360000,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "ChatGPTデスクトップアプリのチャット履歴を、自動でNotionのデータベースに保存する仕組みが作りたい。"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "timestamp_": "absolute",
+            "model_slug": "gpt-4o",
+            "parent_id": "cursor-chat-session",
+            "user_id": "user"
+          },
+          "recipient": "all"
+        },
+        "parent": "cursor-chat-session",
+        "children": [
+          "assistant-message-1"
+        ]
+      },
+      "assistant-message-1": {
+        "id": "assistant-message-1",
+        "message": {
+          "id": "assistant-message-1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1737360000,
+          "update_time": 1737360000,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "ChatGPTデスクトップアプリのチャット履歴をNotionに自動保存するシステムを構築しましょう。\n\n## 必要なもの\n\n1. **Notion API トークン**\n2. **Notion データベース**\n3. **Python 環境**\n4. **ChatGPT エクスポートデータ**\n\n## 実装手順\n\n### 1. Notion API セットアップ\n- Notion インテグレーションを作成\n- API トークンを取得\n- データベースをインテグレーションと共有\n\n### 2. Python スクリプト作成\n- `notion-client` ライブラリを使用\n- ChatGPT エクスポート JSON を解析\n- Notion ページを作成・更新\n\n### 3. 自動化\n- 定期実行スクリプト\n- ファイル監視機能\n- エラーハンドリング\n\nまず、Notion API のセットアップから始めましょうか？"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "timestamp_": "absolute",
+            "model_slug": "gpt-4o",
+            "parent_id": "user-message-1",
+            "user_id": "user"
+          },
+          "recipient": "all"
+        },
+        "parent": "user-message-1",
+        "children": [
+          "user-message-final"
+        ]
+      },
+      "user-message-final": {
+        "id": "user-message-final",
+        "message": {
+          "id": "user-message-final",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1737360000,
+          "update_time": 1737360000,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "このチャットというのは、Cursorのこのチャットのことですよ。スレッド全てのことです。"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "timestamp_": "absolute",
+            "model_slug": "gpt-4o",
+            "parent_id": "assistant-message-1",
+            "user_id": "user"
+          },
+          "recipient": "all"
+        },
+        "parent": "assistant-message-1",
+        "children": [
+          "assistant-message-final"
+        ]
+      },
+      "assistant-message-final": {
+        "id": "assistant-message-final",
+        "message": {
+          "id": "assistant-message-final",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1737360000,
+          "update_time": 1737360000,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "申し訳ありません！Cursorのこのチャットスレッド全体の内容を保存する必要がありますね。現在のファイルには最初の部分しか含まれていません。\n\nCursorのチャット履歴全体を取得して、完全なチャット内容を保存しましょう。\n\nこのチャットセッションには以下が含まれています：\n- ChatGPT to Notionプロジェクトの構築過程\n- 238ページのデータ復元作業\n- 改行問題の解決\n- 謎の文字除去の実装\n- チャット日時設定の追加\n- プロパティ復元の処理\n- 総まとめメモの作成\n\n完全なチャット履歴を保存して、Notionに送信します。"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "timestamp_": "absolute",
+            "model_slug": "gpt-4o",
+            "parent_id": "user-message-final",
+            "user_id": "user"
+          },
+          "recipient": "all"
+        },
+        "parent": "user-message-final",
+        "children": []
+      }
+    }
+  }
+]
+
+

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 実行+通知（osascriptを安全に呼ぶ版）
 set -euo pipefail
-cd "$HOME/NotionLinker"
+cd "$HOME/NotionLinker/NotionLinker"
 
 # .env を反映
 if [ -f ".env" ]; then
@@ -15,7 +15,7 @@ else
     exit 1
 fi
 
-source venv/bin/activate
+source ../venv/bin/activate
 
 ts="$(date '+%Y-%m-%d %H:%M:%S')"
 echo "[$ts] Running link_diary.py ..."

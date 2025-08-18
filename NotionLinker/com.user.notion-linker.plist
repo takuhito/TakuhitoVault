@@ -10,7 +10,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-lc</string>
-        <string>cd '"'"$HOME/NotionLinker"'"' && source venv/bin/activate && python link_diary.py</string>
+        <string>cd '"'"$HOME/NotionLinker/NotionLinker"'"' && source ../venv/bin/activate && python link_diary.py</string>
     </array>
 
     <key>EnvironmentVariables</key>
