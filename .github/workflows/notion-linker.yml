@@ -1,0 +1,68 @@
+name: Notion Linker
+
+on:
+  schedule:
+    # 毎時00分と30分に実行（UTC時間）
+    # 日本時間では毎時09分と39分
+    - cron: '0,30 * * * *'
+  workflow_dispatch:  # 手動実行も可能
+  push:
+    branches: [ main ]
+    paths:
+      - 'NotionLinker/link_diary.py'
+      - 'NotionLinker/requirements.txt'
+      - '.github/workflows/notion-linker.yml'
+
+jobs:
+  run-notion-linker:
+    runs-on: ubuntu-latest
+    name: Run Notion Linker
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd NotionLinker
+        pip install -r requirements.txt
+        
+    - name: Run Notion Linker
+      env:
+        NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        JOURNAL_DB_ID: ${{ secrets.JOURNAL_DB_ID }}
+        PAY_DB_ID: ${{ secrets.PAY_DB_ID }}
+        MYLINK_DB_ID: ${{ secrets.MYLINK_DB_ID }}
+        YOUTUBE_DB_ID: ${{ secrets.YOUTUBE_DB_ID }}
+        AICHAT_DB_ID: ${{ secrets.AICHAT_DB_ID }}
+        ACTION_DB_ID: ${{ secrets.ACTION_DB_ID }}
+        PROP_PAY_DATE: ${{ secrets.PROP_PAY_DATE }}
+        PROP_REL_TO_JOURNAL: ${{ secrets.PROP_REL_TO_JOURNAL }}
+        PROP_MYLINK_REL: ${{ secrets.PROP_MYLINK_REL }}
+        PROP_YOUTUBE_REL: ${{ secrets.PROP_YOUTUBE_REL }}
+        PROP_AICHAT_REL: ${{ secrets.PROP_AICHAT_REL }}
+        PROP_ACTION_REL: ${{ secrets.PROP_ACTION_REL }}
+        PROP_MATCH_STR: ${{ secrets.PROP_MATCH_STR }}
+        PROP_JOURNAL_TITLE: ${{ secrets.PROP_JOURNAL_TITLE }}
+        DRY_RUN: ${{ secrets.DRY_RUN }}
+        NOTION_TIMEOUT: ${{ secrets.NOTION_TIMEOUT }}
+        RECHECK_DAYS: ${{ secrets.RECHECK_DAYS }}
+        SLEEP_BETWEEN: ${{ secrets.SLEEP_BETWEEN }}
+      run: |
+        cd NotionLinker
+        python link_diary.py
+        
+    - name: Upload logs as artifact
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: notion-linker-logs
+        path: |
+          NotionLinker/*.log
+          *.log
+        retention-days: 7
