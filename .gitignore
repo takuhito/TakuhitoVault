@@ -41,6 +41,8 @@ venv.bak/
 .env
 .env.local
 .env.backup
+.env.old
+.env.backup.*
 
 # Logs
 *.log
@@ -78,3 +80,7 @@ chatgpt_sync.log
 # Temporary files
 *.tmp
 *.temp
+
+# NotionLinker specific
+backups/
+*.bak

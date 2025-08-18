@@ -1,10 +1,8 @@
-
 # -*- coding: utf-8 -*-
 """
-Notion Linker（再リンク対応 + リトライ/タイムアウト強化版）
-- 既存リンクの付け替え対応
-- Notion API のタイムアウト/レート制限時に自動リトライ
-- タイムアウト秒数は環境変数 NOTION_TIMEOUT で調整（既定 60）
+Notion Linker 拡張版（修正版）
+- 新しいデータベースの正しいプロパティ構造に対応
+- リレーションプロパティが未設定のページのみを対象
 """
 
 import os, sys, time, random
@@ -21,27 +19,67 @@ except Exception:
 from dotenv import load_dotenv
 load_dotenv()
 
+# 基本設定
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-PAY_DB_ID = os.getenv("PAY_DB_ID")
 JOURNAL_DB_ID = os.getenv("JOURNAL_DB_ID")
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() in ("1", "true", "yes")
 NOTION_TIMEOUT = int(os.getenv("NOTION_TIMEOUT", "60"))  # 秒
 
-# プロパティ名
-PROP_PAY_DATE = os.getenv("PROP_PAY_DATE", "支払予定日")
+# データベース設定（修正版）
+DATABASES = {
+    "支払管理": {
+        "db_id": os.getenv("PAY_DB_ID"),
+        "date_prop": os.getenv("PROP_PAY_DATE", "支払予定日"),
+        "relation_prop": os.getenv("PROP_REL_TO_JOURNAL", "日記[予定日]"),
+        "use_date_filter": True  # 日付プロパティでフィルタ
+    },
+    "マイリンク": {
+        "db_id": os.getenv("MYLINK_DB_ID", "1f3b061dadf381c6a903fc15741f7d06"),
+        "relation_prop": os.getenv("PROP_MYLINK_REL", "完了させた日"),
+        "use_date_filter": False  # リレーションプロパティでフィルタ
+    },
+    "YouTube要約": {
+        "db_id": os.getenv("YOUTUBE_DB_ID", "205b061dadf3803e83d1f67d8d81a215"),
+        "relation_prop": os.getenv("PROP_YOUTUBE_REL", "日記"),
+        "use_date_filter": False  # リレーションプロパティでフィルタ
+    },
+    "AI Chat管理": {
+        "db_id": os.getenv("AICHAT_DB_ID", "1fdb061dadf380f8846df9d89aa6e988"),
+        "relation_prop": os.getenv("PROP_AICHAT_REL", "取得日"),
+        "use_date_filter": False  # リレーションプロパティでフィルタ
+    },
+    "行動": {
+        "db_id": os.getenv("ACTION_DB_ID", "1feb061dadf380d19988d10d8bf0e56d"),
+        "relation_prop": os.getenv("PROP_ACTION_REL", "行動日"),
+        "use_date_filter": False  # リレーションプロパティでフィルタ
+    }
+}
+
+# 共通プロパティ名
 PROP_MATCH_STR = os.getenv("PROP_MATCH_STR", "一致用日付")
-PROP_REL_TO_JOURNAL = os.getenv("PROP_REL_TO_JOURNAL", "日記[予定日]")
 PROP_JOURNAL_TITLE = os.getenv("PROP_JOURNAL_TITLE", "タイトル")
 
 RECHECK_DAYS = int(os.getenv("RECHECK_DAYS", "90"))
 SLEEP_BETWEEN = float(os.getenv("SLEEP_BETWEEN", "0.2"))
 
-if not NOTION_TOKEN or not PAY_DB_ID or not JOURNAL_DB_ID:
-    print("環境変数 NOTION_TOKEN / PAY_DB_ID / JOURNAL_DB_ID が未設定です。.env を確認。")
+# 必須設定の確認
+if not NOTION_TOKEN or not JOURNAL_DB_ID:
+    print("環境変数 NOTION_TOKEN / JOURNAL_DB_ID が未設定です。.env を確認。")
+    sys.exit(1)
+
+# 有効なデータベースのみフィルタ
+ACTIVE_DATABASES = {}
+for name, config in DATABASES.items():
+    if config["db_id"]:
+        ACTIVE_DATABASES[name] = config
+    else:
+        print(f"[WARN] {name}のDB-IDが未設定です。スキップします。")
+
+if not ACTIVE_DATABASES:
+    print("有効なデータベースがありません。.env でDB-IDを設定してください。")
     sys.exit(1)
 
 # --- Notion クライアント（タイムアウト指定）
-# 秒 → ミリ秒に変換して timeout_ms を使う
 notion = Client(auth=NOTION_TOKEN, timeout_ms=int(NOTION_TIMEOUT * 1000))
 
 # ---------- リトライ付きAPI呼び出しユーティリティ ----------
@@ -58,7 +96,6 @@ def with_retry(fn, *, max_attempts=4, base_delay=1.0, what="api"):
             print(f"[RETRY] Timeout on {what}. retry {attempt}/{max_attempts} in {delay:.1f}s")
             time.sleep(delay)
         except APIResponseError as e:
-            # レート制限など
             if getattr(e, "code", "") == "rate_limited":
                 attempt += 1
                 retry_after = float(getattr(e, "headers", {}).get("Retry-After", 1)) if hasattr(e, "headers") else 1.0
@@ -136,7 +173,6 @@ def find_journal_by_match(match_text: str) -> Optional[Dict[str, Any]]:
         return arr[0]
     
     # 一致用日付で見つからない場合、タイトルで検索
-    # 「2025-08-16」形式を「2025-0816」形式に変換
     import re
     pattern = r'^(\d{4})-(\d{2})-(\d{2})$'
     match = re.match(pattern, match_text)
@@ -160,7 +196,6 @@ def find_journal_by_match(match_text: str) -> Optional[Dict[str, Any]]:
     return None
 
 def create_journal_page(match_text: str) -> Dict[str, Any]:
-    # 「2025-08-16」形式を「2025-0816」形式に変換
     import re
     pattern = r'^(\d{4})-(\d{2})-(\d{2})$'
     match = re.match(pattern, match_text)
@@ -168,11 +203,10 @@ def create_journal_page(match_text: str) -> Dict[str, Any]:
         year, month, day = match.groups()
         title_format = f"{year}-{month}{day}"
     else:
-        title_format = match_text  # 変換できない場合はそのまま
+        title_format = match_text
     
     props = {
         PROP_JOURNAL_TITLE: {"title": [{"type": "text", "text": {"content": title_format}}]},
-        # 一致用日付は formula 想定のため書かない
     }
     if DRY_RUN:
         print(f"[DRY-RUN] Create Journal page: title={title_format} (from {match_text})")
@@ -181,13 +215,13 @@ def create_journal_page(match_text: str) -> Dict[str, Any]:
         return notion.pages.create(**{"parent": {"database_id": JOURNAL_DB_ID}, "properties": props})
     return with_retry(_call, what="pages.create")
 
-def set_relation(pay_page_id: str, journal_page_id: str):
+def set_relation(page_id: str, journal_page_id: str, relation_prop: str):
     if DRY_RUN:
-        print(f"[DRY-RUN] Set relation: {pay_page_id} -> {journal_page_id}")
+        print(f"[DRY-RUN] Set relation: {page_id} -> {journal_page_id} (prop: {relation_prop})")
         return
     def _call():
         return notion.pages.update(
-            **{"page_id": pay_page_id, "properties": {PROP_REL_TO_JOURNAL: {"relation": [{"id": journal_page_id}]}}}
+            **{"page_id": page_id, "properties": {relation_prop: {"relation": [{"id": journal_page_id}]}}}
         )
     with_retry(_call, what="pages.update")
 
@@ -196,98 +230,75 @@ def retrieve_page(page_id: str) -> Dict[str, Any]:
         return notion.pages.retrieve(page_id=page_id)
     return with_retry(_call, what="pages.retrieve")
 
-# ---------- メイン ----------
-def main():
-    print("== Notion Linker: 再リンク + リトライ版 ==")
-    # 支払予定日が入っているページを期間制限で取得
-    filter_obj = {"property": PROP_PAY_DATE, "date": {"is_not_empty": True}}
-    if RECHECK_DAYS and RECHECK_DAYS > 0:
-        since = (datetime.now(timezone.utc) - timedelta(days=RECHECK_DAYS)).date().isoformat()
-        filter_obj = {
-            "and": [
-                {"property": PROP_PAY_DATE, "date": {"is_not_empty": True}},
-                {"property": PROP_PAY_DATE, "date": {"on_or_after": since}},
-            ]
-        }
+# ---------- データベース処理 ----------
+def process_database(db_name: str, db_config: Dict[str, Any]):
+    print(f"\n=== {db_name} データベース処理開始 ===")
+    
+    # フィルタの設定
+    if db_config.get("use_date_filter", False):
+        # 支払管理の場合：日付プロパティでフィルタ
+        filter_obj = {"property": db_config["date_prop"], "date": {"is_not_empty": True}}
+        if RECHECK_DAYS and RECHECK_DAYS > 0:
+            since = (datetime.now(timezone.utc) - timedelta(days=RECHECK_DAYS)).date().isoformat()
+            filter_obj = {
+                "and": [
+                    {"property": db_config["date_prop"], "date": {"is_not_empty": True}},
+                    {"property": db_config["date_prop"], "date": {"on_or_after": since}},
+                ]
+            }
+    else:
+        # 新しいデータベースの場合：リレーションプロパティが空のものを対象
+        filter_obj = {"property": db_config["relation_prop"], "relation": {"is_empty": True}}
 
-    pages = list(iter_database_pages(PAY_DB_ID, filter_obj))
+    pages = list(iter_database_pages(db_config["db_id"], filter_obj))
     if not pages:
-        print("対象ページはありません。")
+        print(f"{db_name}: 対象ページはありません。")
         return
 
-    print(f"対象ページ数: {len(pages)}")
+    print(f"{db_name}: 対象ページ数: {len(pages)}")
+    processed_count = 0
+    
     for i, page in enumerate(pages, 1):
-        pay_page_id = page["id"]
+        page_id = page["id"]
 
         # 期待マッチ文字列
         try:
             match_prop = get_page_prop(page, PROP_MATCH_STR)
         except KeyError as e:
-            print(f"[WARN] {e}; スキップ: {pay_page_id}")
+            print(f"[WARN] {e}; スキップ: {page_id}")
             continue
         match_text = get_prop_val(match_prop)
-        if not match_text:
-            # フォールバック：日付から生成
-            date_iso = get_prop_val(get_page_prop(page, PROP_PAY_DATE))
-            match_text = date_iso[:10] if date_iso and len(date_iso) >= 10 else None
         if not match_text:
             print(f"[{i}/{len(pages)}] 一致用日付が空でスキップ")
             continue
 
-        # 既存リレーション確認
-        rel_prop = get_page_prop(page, PROP_REL_TO_JOURNAL)
-        current_rel = get_prop_val(rel_prop)
-
-        needs_link = False
-        reason = "未リンク"
-        if not current_rel:
-            needs_link = True
-        else:
-            j_id = current_rel[0]["id"]
-            jpage = retrieve_page(j_id)
-            jprops = jpage.get("properties", {})
-            jmatch = None
-            if PROP_MATCH_STR in jprops:
-                jmatch = get_prop_val(jprops[PROP_MATCH_STR])
-            if not jmatch and PROP_JOURNAL_TITLE in jprops:
-                jmatch = get_prop_val(jprops[PROP_JOURNAL_TITLE])
-            
-            # 日付形式の比較（「2025-08-16」と「2025-0816」を同等に扱う）
-            import re
-            def normalize_date(date_str):
-                if not date_str:
-                    return None
-                # 「2025-0816」形式を「2025-08-16」形式に変換
-                pattern = r'^(\d{4})-(\d{2})(\d{2})$'
-                match = re.match(pattern, date_str)
-                if match:
-                    year, month, day = match.groups()
-                    return f"{year}-{month}-{day}"
-                return date_str
-            
-            normalized_jmatch = normalize_date(jmatch)
-            normalized_match_text = normalize_date(match_text)
-            
-            if normalized_jmatch != normalized_match_text:
-                needs_link = True
-                reason = f"日付変更（現在:{jmatch}→期待:{match_text}）"
-
-        if not needs_link:
-            print(f"[{i}/{len(pages)}] 変更なし（スキップ）")
-            continue
-
-        print(f"[{i}/{len(pages)}] match='{match_text}' → DailyJournal を検索（理由:{reason}）")
+        print(f"[{i}/{len(pages)}] match='{match_text}' → DailyJournal を検索")
         journal = find_journal_by_match(match_text)
         if not journal:
             print("  該当なし → 作成")
             journal = create_journal_page(match_text)
 
         new_id = journal["id"]
-        print(f"  リレーション設定: {pay_page_id} -> {new_id}")
-        set_relation(pay_page_id, new_id)
+        print(f"  リレーション設定: {page_id} -> {new_id}")
+        set_relation(page_id, new_id, db_config["relation_prop"])
+        processed_count += 1
         time.sleep(SLEEP_BETWEEN)
 
-    print("完了しました。")
+    print(f"{db_name}: {processed_count}件処理完了")
+
+# ---------- メイン ----------
+def main():
+    print("== Notion Linker 拡張版（修正版）: 4つの新しいデータベース対応 ==")
+    print(f"有効なデータベース: {', '.join(ACTIVE_DATABASES.keys())}")
+    
+    for db_name, db_config in ACTIVE_DATABASES.items():
+        try:
+            process_database(db_name, db_config)
+        except Exception as e:
+            print(f"[ERROR] {db_name}の処理中にエラーが発生: {e}")
+            continue
+
+    print("\n全てのデータベースの処理が完了しました。")
 
 if __name__ == "__main__":
     try:
