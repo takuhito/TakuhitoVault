@@ -1,0 +1,38 @@
+{
+  "session_id": "debug_test_session",
+  "start_time": "2025-08-20T16:26:26.485391",
+  "end_time": "2025-08-20T16:26:26.486243",
+  "operations": [
+    {
+      "timestamp": "2025-08-20T16:26:26.485734",
+      "operation_name": "test_operation",
+      "inputs": {
+        "input": "test"
+      },
+      "outputs": {
+        "output": "result"
+      },
+      "metadata": {}
+    }
+  ],
+  "errors": [
+    {
+      "timestamp": "2025-08-20T16:26:26.486019",
+      "error_type": "ValueError",
+      "error_message": "テストエラー",
+      "stack_trace": "NoneType: None\n",
+      "context": {
+        "context": "test"
+      }
+    }
+  ],
+  "performance_data": {
+    "test_operation": [
+      {
+        "timestamp": "2025-08-20T16:26:26.486240",
+        "duration": 1.5,
+        "additional_metrics": {}
+      }
+    ]
+  }
+}

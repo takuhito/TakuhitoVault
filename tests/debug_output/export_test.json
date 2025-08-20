@@ -1,0 +1,16 @@
+{
+  "session_id": "export_test",
+  "start_time": "2025-08-20T16:26:26.495806",
+  "end_time": "2025-08-20T16:26:26.496029",
+  "operations": [
+    {
+      "timestamp": "2025-08-20T16:26:26.495947",
+      "operation_name": "export_operation",
+      "inputs": {},
+      "outputs": {},
+      "metadata": {}
+    }
+  ],
+  "errors": [],
+  "performance_data": {}
+}

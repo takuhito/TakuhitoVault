@@ -1,0 +1,38 @@
+{
+  "session_id": "summary_test",
+  "start_time": "2025-08-20T16:26:26.492321",
+  "end_time": "2025-08-20T16:26:26.492538",
+  "operations": [
+    {
+      "timestamp": "2025-08-20T16:26:26.492416",
+      "operation_name": "op1",
+      "inputs": {},
+      "outputs": {},
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-08-20T16:26:26.492451",
+      "operation_name": "op2",
+      "inputs": {},
+      "outputs": {},
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-08-20T16:26:26.492493",
+      "operation_name": "op1",
+      "inputs": {},
+      "outputs": {},
+      "metadata": {}
+    }
+  ],
+  "errors": [],
+  "performance_data": {
+    "op1": [
+      {
+        "timestamp": "2025-08-20T16:26:26.492535",
+        "duration": 2.0,
+        "additional_metrics": {}
+      }
+    ]
+  }
+}

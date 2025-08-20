@@ -1,0 +1,40 @@
+# Cloud Run サービス設定
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: receipt-processor
+  namespace: default
+  annotations:
+    run.googleapis.com/ingress: internal
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "1"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "1"
+        run.googleapis.com/timeout: "900"
+    spec:
+      containerConcurrency: 1
+      containers:
+      - image: gcr.io/PROJECT_ID/receipt-processor:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+        volumeMounts:
+        - name: secrets-volume
+          mountPath: /secrets
+          readOnly: true
+      volumes:
+      - name: secrets-volume
+        secret:
+          secretName: service-account-secret
