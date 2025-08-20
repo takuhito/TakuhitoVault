@@ -7,20 +7,20 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/takuhito/NotionLinker/chatgpt_sync.sh</string>
+        <string>/Users/takuhito/NotionWorkflowTools/chatgpt_sync.sh</string>
     </array>
     
     <key>WorkingDirectory</key>
-    <string>/Users/takuhito/NotionLinker</string>
+    <string>/Users/takuhito/NotionWorkflowTools</string>
     
     <key>StartInterval</key>
     <integer>1800</integer>
     
     <key>StandardOutPath</key>
-    <string>/Users/takuhito/NotionLinker/chatgpt_sync.log</string>
+    <string>/Users/takuhito/NotionWorkflowTools/chatgpt_sync.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/takuhito/NotionLinker/chatgpt_sync.log</string>
+    <string>/Users/takuhito/NotionWorkflowTools/chatgpt_sync.log</string>
     
     <key>RunAtLoad</key>
     <true/>

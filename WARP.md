@@ -2,7 +2,7 @@
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
-Repository: NotionLinker
+Repository: NotionWorkflowTools
 
 - Purpose: Automate linking and maintenance between two Notion databases (Payments and DailyJournal). Creates missing journal pages, fixes titles/dates, removes/merges duplicates, and links payments to journals by date.
 - Language/Runtime: Python 3 with virtualenv

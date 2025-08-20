@@ -1,11 +1,11 @@
-# NotionLinker Workspace
+# NotionWorkflowTools Workspace
 
 このワークスペースは、Notionとの連携を行う複数のプロジェクトを管理するためのリポジトリです。
 
 ## 📁 プロジェクト構成
 
 ```
-NotionLinker/                    # メインワークスペース
+NotionWorkflowTools/             # メインワークスペース
 ├── NotionLinker/               # NotionLinkerプロジェクト
 │   ├── link_diary.py           # 日記リンク機能
 │   ├── create_missing_journal_pages.py
@@ -119,7 +119,7 @@ NOTION_TIMEOUT=60
 
 ---
 
-**NotionLinker Workspace**  
+**NotionWorkflowTools Workspace**  
 Version: 2.0  
 Last Updated: 2025-01-20
 

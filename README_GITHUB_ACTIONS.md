@@ -1,7 +1,7 @@
-# GitHub Actions での NotionLinker 実行
+# GitHub Actions での NotionWorkflowTools 実行
 
 ## 概要
-GitHub Actionsを使用してNotionLinkerをクラウド上で定期実行する方法です。
+GitHub Actionsを使用してNotionWorkflowToolsをクラウド上で定期実行する方法です。
 
 ## 設定手順
 

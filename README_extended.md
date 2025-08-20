@@ -44,7 +44,7 @@ NotionLinker/
 
 ### 1. 環境設定ファイルの作成
 ```bash
-cd ~/NotionLinker/NotionLinker
+cd ~/NotionWorkflowTools/NotionLinker
 cp .env.template .env  # テンプレートがない場合は手動で作成
 ```
 
