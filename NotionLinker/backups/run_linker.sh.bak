@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$HOME/NotionLinker"
+
+set -a
+[ -f ".env" ] && source .env
+set +a
+
+source venv/bin/activate
+
+ts="$(date '+%Y-%m-%d %H:%M:%S')"
+echo "[$ts] Running link_diary.py ..."
+
+output_file="$HOME/Library/Logs/notion-linker.last.out"
+err_file="$HOME/Library/Logs/notion-linker.last.err"
+mkdir -p "$(dirname "$output_file")"
+
+set +e
+python link_diary.py >"$output_file" 2>"$err_file"
+status=$?
+set -e
+
+cat "$output_file"
+if [ -s "$err_file" ]; then
+  cat "$err_file" >&2
+fi
+
+notify_fail () {
+  local msg="$1"
+  /usr/bin/osascript -e "display notification \"${msg}\" with title \"Notion Linker\" subtitle \"失敗しました\""
+  if [ -n "${SLACK_WEBHOOK:-}" ]; then
+    /usr/bin/curl -s -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"[Notion Linker] 失敗: ${msg//\"/\\\"}\"}" \
+      "$SLACK_WEBHOOK" >/dev/null 2>&1 || true
+  fi
+}
+
+notify_ok () {
+  local msg="$1"
+  /usr/bin/osascript -e "display notification \"${msg}\" with title \"Notion Linker\" subtitle \"成功\""
+  if [ -n "${SLACK_WEBHOOK:-}" ]; then
+    /usr/bin/curl -s -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"[Notion Linker] 成功: ${msg//\"/\\\"}\"}" \
+      "$SLACK_WEBHOOK" >/dev/null 2>&1 || true
+  fi
+}
+
+if [ $status -ne 0 ]; then
+  short_err="$(head -n 3 "$err_file" | tr -d '\r' | tr '\n' ' ')"
+  [ -z "$short_err" ] && short_err="詳細はログを確認してください"
+  notify_fail "$short_err"
+  exit $status
+else
+  last_line="$(tail -n 1 "$output_file" | tr -d '\r')"
+  [ -z "$last_line" ] && last_line="完了"
+  notify_ok "$last_line"
+fi
