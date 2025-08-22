@@ -10,7 +10,7 @@ from typing import List, Dict, Any
 
 from config import validate_settings, GOOGLE_DRIVE_MONITOR_FOLDER
 from google_drive_client import GoogleDriveClient
-from notion_client import NotionClient
+from notion_api_client import NotionClient
 
 def process_receipt_file(file_info: Dict[str, Any], google_drive_client: GoogleDriveClient, notion_client: NotionClient) -> bool:
     """

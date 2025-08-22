@@ -35,7 +35,7 @@ def test_imports():
     print("\n🔍 モジュールインポートテスト")
     print("=" * 40)
     
-    modules = ['config', 'google_drive_client', 'notion_client']
+    modules = ['config', 'google_drive_client', 'notion_api_client']
     for module in modules:
         try:
             __import__(module)
@@ -66,7 +66,7 @@ def test_notion():
     print("=" * 40)
     
     try:
-        from notion_client import NotionClient
+        from notion_api_client import NotionClient
         client = NotionClient()
         print("✅ NotionClient: OK")
         
