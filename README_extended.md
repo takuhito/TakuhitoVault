@@ -14,30 +14,36 @@ Notion の複数のデータベースと「DailyJournal」データベースを�
 DailyJournal 側で同じ「一致用日付」を持つページを検索して関連付けます。該当ページがない場合は
 DailyJournal に新規ページ（タイトルのみ）を作成し、その上で関連付けを行います。
 
+## 現在の状況
+
+**✅ 本番運用中**
+- launchdサービスで15分間隔で自動実行
+- 本番モード（DRY_RUN=false）で動作
+- Notionページの実際の更新が実行中
+
 ## プロジェクト構造
 ```
 NotionLinker/
 ├── link_diary.py              # メインスクリプト
-├── run_linker.sh              # 実行スクリプト
+├── run_linker.sh              # 手動実行スクリプト
+├── run_linker_launchd.sh      # launchd用実行スクリプト
 ├── requirements.txt           # Python依存関係
-├── .env                       # 環境設定
+├── .env                       # 環境設定（本番用）
 ├── README_extended.md         # このファイル
 ├── backups/                   # バックアップファイル
 │   └── README.md
 ├── config/                    # 設定ファイル
-│   ├── com.tkht.notion-linker.plist
-│   └── README.md
+│   └── com.tkht.notion-linker.plist
 ├── docs/                      # ドキュメント
 │   ├── title_update_guide.md
 │   └── README.md
-├── scripts/                   # 開発・メンテナンス用スクリプト
-│   ├── check_existing_relations.py
-│   ├── create_missing_journal_pages.py
-│   ├── merge_duplicate_pages.py
-│   ├── remove_duplicate_pages.py
-│   ├── notion_title_updater.py
-│   └── README.md
-└── venv/                      # Python仮想環境
+└── scripts/                   # 開発・メンテナンス用スクリプト
+    ├── check_existing_relations.py
+    ├── create_missing_journal_pages.py
+    ├── merge_duplicate_pages.py
+    ├── remove_duplicate_pages.py
+    ├── notion_title_updater.py
+    └── README.md
 ```
 
 ## セットアップ
@@ -45,7 +51,6 @@ NotionLinker/
 ### 1. 環境設定ファイルの作成
 ```bash
 cd ~/NotionWorkflowTools/NotionLinker
-cp .env.template .env  # テンプレートがない場合は手動で作成
 ```
 
 ### 2. .env ファイルの設定
@@ -55,43 +60,14 @@ cp .env.template .env  # テンプレートがない場合は手動で作成
 # === 基本設定 ===
 NOTION_TOKEN=your_notion_integration_token_here
 JOURNAL_DB_ID=your_journal_database_id_here
+DRY_RUN=false  # 本番モード
+```
 
-# === データベース設定 ===
-PAY_DB_ID=your_payment_database_id_here
-MYLINK_DB_ID=1f3b061dadf381c6a903fc15741f7d06
-YOUTUBE_DB_ID=205b061dadf3803e83d1f67d8d81a215
-AICHAT_DB_ID=1fdb061dadf380f8846df9d89aa6e988
-ACTION_DB_ID=1feb061dadf380d19988d10d8bf0e56d
-
-# === プロパティ名設定 ===
-PROP_MATCH_STR=一致用日付
-PROP_JOURNAL_TITLE=タイトル
-
-# 支払管理プロパティ
-PROP_PAY_DATE=支払予定日
-PROP_REL_TO_JOURNAL=日記[予定日]
-
-# マイリンクプロパティ
-PROP_MYLINK_DATE=完了させた日
-PROP_MYLINK_REL=完了させた日
-
-# YouTube要約プロパティ
-PROP_YOUTUBE_DATE=日記
-PROP_YOUTUBE_REL=日記
-
-# AI Chat管理プロパティ
-PROP_AICHAT_DATE=取得日
-PROP_AICHAT_REL=取得日
-
-# 行動プロパティ
-PROP_ACTION_DATE=行動日
-PROP_ACTION_REL=行動日
-
-# === 動作設定 ===
-DRY_RUN=true
-NOTION_TIMEOUT=60
-RECHECK_DAYS=90
-SLEEP_BETWEEN=0.2
+**実際の設定例:**
+```env
+NOTION_TOKEN=REDACTED_NOTION
+JOURNAL_DB_ID=1f8b061dadf3817b97a7c973adae7fd3
+DRY_RUN=false
 ```
 
 ### 3. 依存関係のインストール
@@ -103,17 +79,41 @@ pip install -r requirements.txt
 
 ### 4. 初回テスト実行
 ```bash
-./run_linker.sh  # DRY_RUN=true でテスト実行
+./run_linker.sh  # 手動実行でテスト
 ```
 
 ## 本番運用
-- `.env` の `DRY_RUN=false` にして再実行すると、Notion に実際に書き込みます。
-- 定期実行する場合は、`config/com.tkht.notion-linker.plist`（launchd）を使って自動実行可能です。
+
+### launchdサービスでの自動実行
+
+**サービス状態確認:**
+```bash
+launchctl list | grep notion-linker
+```
+
+**ログ確認:**
+```bash
+# 標準出力ログ
+tail -f ~/Library/Logs/notion-linker.out.log
+
+# エラーログ
+tail -f ~/Library/Logs/notion-linker.err.log
+```
+
+**サービス再起動:**
+```bash
+launchctl unload ~/Library/LaunchAgents/com.tkht.notion-linker.plist
+launchctl load ~/Library/LaunchAgents/com.tkht.notion-linker.plist
+```
+
+### 実行タイミング
+- **自動実行**: 15分間隔（00分、15分、30分、45分）
+- **手動実行**: `./run_linker.sh`
 
 ## データベース設定詳細
 
 ### 支払管理データベース
-- **DB-ID**: 既存の設定を使用
+- **DB-ID**: 環境変数で設定
 - **日付プロパティ**: `支払予定日`
 - **リレーションプロパティ**: `日記[予定日]`
 
@@ -159,20 +159,28 @@ pip install -r requirements.txt
 
 ### よくあるエラー
 - `環境変数が未設定です` → `.env` に必要な値（`NOTION_TOKEN` / `JOURNAL_DB_ID`）を設定
-- `プロパティが見つかりません` → `.env` のプロパティ名が実際のDBプロパティ名と一致しているか確認
+- `プロパティが見つかりません` → データベースのプロパティ名が正しいか確認
 - `有効なデータベースがありません` → 各データベースのDB-IDが正しく設定されているか確認
+- `launchdサービスが動作しない` → サービスを再起動し、ログを確認
 
 ### ログ確認
-- 実行ログだけ見たい → `.env` で `DRY_RUN=true` を指定
-- 特定のデータベースでエラーが発生 → エラーメッセージを確認し、該当DBの設定を見直し
+- 実行ログ: `tail -f ~/Library/Logs/notion-linker.out.log`
+- エラーログ: `tail -f ~/Library/Logs/notion-linker.err.log`
+- テスト実行: `DRY_RUN=true` で手動実行
 
 ## 既存版との違い
 - 元の `link_diary.py` は支払管理のみ対応
 - 新しい `link_diary.py` は5つのデータベースに対応
 - 設定は `.env` ファイルで一元管理
 - 各データベースの処理状況を個別に表示
+- launchdサービスでの自動実行に対応
 
 ## 開発・メンテナンス
 - `scripts/` フォルダに開発・メンテナンス用スクリプトがあります
 - `docs/` フォルダに詳細なガイドがあります
 - `backups/` フォルダに過去のバージョンが保存されています
+
+## 更新履歴
+
+- **v2.0.0**: launchdサービスでの自動実行開始、本番モード移行
+- **v1.0.0**: 初回リリース、5つのデータベース対応
