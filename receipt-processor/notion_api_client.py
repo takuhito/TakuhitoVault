@@ -314,8 +314,8 @@ class NotionClient:
                 logger.warning(f"日付処理エラー: {receipt_data['date']}, {e}")
                 # 日付処理に失敗した場合は現在の日付を使用
                 from datetime import datetime
-                properties["発生日"] = {
-                    "date": {
+            properties["発生日"] = {
+                "date": {
                         "start": datetime.now().strftime('%Y-%m-%d')
                 }
             }
@@ -358,8 +358,8 @@ class NotionClient:
             
             # 有効な支払い方法かチェック
             if payment_method in valid_payment_methods:
-                properties["支払方法"] = {
-                    "select": {
+            properties["支払方法"] = {
+                "select": {
                         "name": payment_method
                     }
                 }
@@ -368,8 +368,8 @@ class NotionClient:
                 properties["支払方法"] = {
                     "select": {
                         "name": "その他"
-                    }
                 }
+            }
         
         # カテゴリ
         if 'category' in receipt_data:
