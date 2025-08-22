@@ -1,13 +1,38 @@
 # GitHub Actions での NotionWorkflowTools 実行
 
-## 概要
-GitHub Actionsを使用してNotionWorkflowToolsをクラウド上で定期実行する方法です。
+## ⚠️ 重要なお知らせ
 
-## 設定手順
+**GitHub Actionsは無料枠制限により停止しました。**
+
+現在はローカルのlaunchdサービスで15分間隔で実行されています。
+
+## 現在の実行方法
+
+### ローカル実行（launchd）
+
+```bash
+# サービス状態確認
+launchctl list | grep notion-linker
+
+# ログ確認
+tail -f ~/Library/Logs/notion-linker.out.log
+tail -f ~/Library/Logs/notion-linker.err.log
+```
+
+### 設定ファイル
+
+`NotionLinker/.env`:
+```bash
+NOTION_TOKEN=REDACTED_NOTION
+JOURNAL_DB_ID=1f8b061dadf3817b97a7c973adae7fd3
+DRY_RUN=false
+```
+
+## 過去のGitHub Actions設定（参考）
 
 ### 1. GitHub Secrets の設定
 
-GitHubリポジトリの **Settings > Secrets and variables > Actions** で以下のシークレットを設定してください：
+GitHubリポジトリの **Settings > Secrets and variables > Actions** で以下のシークレットを設定していました：
 
 #### 必須設定
 ```
@@ -44,7 +69,7 @@ RECHECK_DAYS=90
 SLEEP_BETWEEN=0.2
 ```
 
-### 2. ワークフローの動作
+### 2. ワークフローの動作（過去）
 
 #### 実行タイミング
 - **定期実行**: 毎時00分と30分（UTC時間）
@@ -57,18 +82,7 @@ SLEEP_BETWEEN=0.2
 - **Python**: 3.11
 - **実行場所**: GitHubのクラウド環境
 
-### 3. 実行状況の確認
-
-#### GitHub Actions ページ
-1. リポジトリの **Actions** タブにアクセス
-2. **Notion Linker** ワークフローを選択
-3. 実行履歴とログを確認
-
-#### ログの確認
-- 各実行の詳細ログを確認可能
-- 実行結果はアーティファクトとして保存（7日間）
-
-### 4. メリット
+### 3. メリットと制限（過去）
 
 #### ✅ 利点
 - **無料**: GitHubの無料枠で利用可能
@@ -78,30 +92,18 @@ SLEEP_BETWEEN=0.2
 - **手動実行**: 必要に応じて手動実行可能
 - **iPhone対応**: ブラウザから実行状況確認可能
 
-#### ⚠️ 制限事項
+#### ⚠️ 制限事項（停止の原因）
 - **実行時間**: 月2000分の制限（無料枠）
 - **同時実行**: 1つのワークフローは同時に1つまで
 - **環境変数**: シークレットとして管理が必要
 
-### 5. トラブルシュート
+## ローカル実行への移行理由
 
-#### よくある問題
-1. **シークレット未設定**: 必要な環境変数が設定されていない
-2. **実行失敗**: Notion APIのエラーやネットワーク問題
-3. **タイムアウト**: 大量データ処理時の時間制限
+1. **GitHub Actions無料枠制限**: 月2000分の制限に達した
+2. **安定性**: ローカル実行の方が安定している
+3. **カスタマイズ性**: より細かい設定が可能
+4. **プライバシー**: データがローカルで処理される
 
-#### 対処法
-- GitHub Actionsのログを確認
-- シークレットの設定を再確認
-- 手動実行でテスト
+## 現在の推奨設定
 
-### 6. ローカル環境との併用
-
-GitHub Actionsとローカルのlaunchdを併用することで：
-- **冗長性**: どちらかが失敗しても他方が動作
-- **柔軟性**: 必要に応じて実行方法を選択
-- **監視**: 複数の実行環境で動作確認
-
-## 設定完了後
-
-設定が完了すると、GitHub Actionsが自動的に開始されます。初回実行は手動で行うことをお勧めします。
+詳細は[README.md](README.md)を参照してください。

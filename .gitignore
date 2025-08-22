@@ -151,3 +151,6 @@ temp/
 
 # 履歴ファイル
 .history/
+
+# NotionLinker ログ
+NotionLinker/logs/
