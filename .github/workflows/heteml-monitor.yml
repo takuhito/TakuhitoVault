@@ -2,8 +2,8 @@ name: HETEML Monitor
 
 on:
   schedule:
-    # 1時間ごとに実行
-    - cron: '0 * * * *'
+    # 6時間ごとに実行（月124時間 = 7,440分）
+    - cron: '0 */6 * * *'
   workflow_dispatch:  # 手動実行も可能
 
 jobs:
