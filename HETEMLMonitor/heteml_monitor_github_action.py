@@ -18,6 +18,7 @@ from pathlib import Path
 
 # 設定ファイルのインポート
 try:
+    print("📁 設定ファイルを読み込み中...")
     from config import (
         HETEML_CONFIG, 
         MONITOR_CONFIG, 
@@ -25,8 +26,13 @@ try:
         LOG_CONFIG, 
         DB_CONFIG
     )
-except ImportError:
-    print("設定ファイルが見つかりません。config.example.pyをconfig.pyにコピーして編集してください。")
+    print("✅ 設定ファイルの読み込みに成功しました")
+except ImportError as e:
+    print(f"❌ 設定ファイルの読み込みに失敗: {e}")
+    print("config.example.pyをconfig.pyにコピーして編集してください。")
+    sys.exit(1)
+except Exception as e:
+    print(f"❌ 設定ファイルで予期しないエラー: {e}")
     sys.exit(1)
 
 # 通知モジュールのインポート
@@ -296,14 +302,34 @@ class HETEMLMonitorGitHubAction:
 
 def main():
     """メイン関数"""
-    monitor = HETEMLMonitorGitHubAction()
-    success = monitor.run_monitoring()
-    
-    if success:
-        print("✅ HETEML監視が正常に完了しました")
-        sys.exit(0)
-    else:
-        print("❌ HETEML監視でエラーが発生しました")
+    try:
+        print("🚀 HETEMLMonitor GitHub Action版を開始します...")
+        print(f"現在のディレクトリ: {os.getcwd()}")
+        print(f"Pythonバージョン: {sys.version}")
+        
+        # 環境変数の確認（機密情報は除く）
+        env_vars = ['HETEML_PASSWORD', 'EMAIL_USERNAME', 'EMAIL_PASSWORD', 'FROM_EMAIL', 'TO_EMAIL']
+        for var in env_vars:
+            value = os.getenv(var)
+            if value:
+                print(f"✅ {var}: 設定済み")
+            else:
+                print(f"❌ {var}: 未設定")
+        
+        monitor = HETEMLMonitorGitHubAction()
+        success = monitor.run_monitoring()
+        
+        if success:
+            print("✅ HETEML監視が正常に完了しました")
+            sys.exit(0)
+        else:
+            print("❌ HETEML監視でエラーが発生しました")
+            sys.exit(1)
+            
+    except Exception as e:
+        print(f"💥 予期しないエラーが発生しました: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
