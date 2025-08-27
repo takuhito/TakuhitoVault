@@ -51,12 +51,12 @@ jobs:
         echo "Installed packages:"
         pip list | grep -E "(paramiko|requests|python-dotenv)"
         
-    - name: Run basic test first
+    - name: Run hello test first
       run: |
         cd HETEMLMonitor
-        echo "=== 基本テスト開始 ==="
-        python test_basic.py
-        echo "=== 基本テスト終了 ==="
+        echo "=== Helloテスト開始 ==="
+        python test_hello.py
+        echo "=== Helloテスト終了 ==="
         
     - name: Run minimal test
       run: |
