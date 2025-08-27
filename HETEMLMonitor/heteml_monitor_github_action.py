@@ -207,11 +207,18 @@ class HETEMLMonitorGitHubAction:
         modified_files = []
         
         for file_path in self.known_files:
-            if not self.sftp_client.exists(file_path):
+            try:
+                # SFTPでファイルの存在確認
+                self.sftp_client.stat(file_path)
+            except FileNotFoundError:
                 # ファイルが削除された
                 self.known_files.discard(file_path)
                 self.file_hashes.pop(file_path, None)
                 self.logger.info(f"ファイルが削除されました: {file_path}")
+                continue
+            except Exception as e:
+                # その他のエラー（アクセス権限など）
+                self.logger.warning(f"ファイル確認エラー {file_path}: {e}")
                 continue
             
             # ハッシュ値を比較
