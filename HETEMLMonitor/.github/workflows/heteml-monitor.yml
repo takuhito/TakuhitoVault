@@ -1,0 +1,59 @@
+name: HETEML Monitor
+
+on:
+  schedule:
+    # 1時間ごとに実行
+    - cron: '0 * * * *'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd HETEMLMonitor
+        pip install -r requirements.txt
+        
+    - name: Create config file
+      run: |
+        cd HETEMLMonitor
+        cp config.example.py config.py
+      env:
+        HETEML_PASSWORD: ${{ secrets.HETEML_PASSWORD }}
+        EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        
+    - name: Run HETEML Monitor
+      run: |
+        cd HETEMLMonitor
+        python heteml_monitor_github_action.py
+      env:
+        HETEML_PASSWORD: ${{ secrets.HETEML_PASSWORD }}
+        EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        
+    - name: Upload logs as artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: heteml-monitor-logs
+        path: HETEMLMonitor/logs/
+        retention-days: 7
