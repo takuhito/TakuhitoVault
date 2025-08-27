@@ -51,11 +51,18 @@ jobs:
         echo "Installed packages:"
         pip list | grep -E "(paramiko|requests|python-dotenv)"
         
-    - name: Run minimal test first
+    - name: Run basic test first
+      run: |
+        cd HETEMLMonitor
+        echo "=== 基本テスト開始 ==="
+        python test_basic.py
+        echo "=== 基本テスト終了 ==="
+        
+    - name: Run minimal test
       run: |
         cd HETEMLMonitor
         echo "=== 最小限テスト開始 ==="
-        python -u test_minimal.py 2>&1
+        python test_minimal.py
         echo "=== 最小限テスト終了 ==="
       env:
         HETEML_PASSWORD: ${{ secrets.HETEML_PASSWORD }}
