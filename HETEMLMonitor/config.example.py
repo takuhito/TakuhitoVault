@@ -8,9 +8,9 @@ load_dotenv()
 
 # HETEMLサーバ接続設定
 HETEML_CONFIG = {
-    'hostname': 'your-heteml-server.com',  # HETEMLサーバのホスト名
-    'port': 22,                           # SSHポート（通常は22）
-    'username': 'your-username',          # SSHユーザー名
+    'hostname': 'ssh-nbsorjp.heteml.net',  # HETEMLサーバのホスト名
+    'port': 2222,                           # SSHポート（HETEMLは通常2222）
+    'username': 'nbsorjp',                  # SSHユーザー名
     'password': os.getenv('HETEML_PASSWORD'),  # SSHパスワード（環境変数から取得）
     'key_filename': None,                 # SSH秘密鍵ファイルパス（使用する場合）
     'timeout': 30,                        # 接続タイムアウト（秒）
@@ -18,7 +18,7 @@ HETEML_CONFIG = {
 
 # 監視設定
 MONITOR_CONFIG = {
-    'target_path': '/path/to/www.nbs.or.jp/stages/',  # 監視対象フォルダパス
+    'target_path': '/home/users/0/nbsorjp/web/domain/nbspress.com/nbs.or.jp/stages/',  # 監視対象フォルダパス
     'check_interval': 300,                # 監視間隔（秒）
     'file_pattern': '*',                  # 監視するファイルパターン
     'exclude_patterns': ['.*', '*.tmp'],  # 除外するファイルパターン
