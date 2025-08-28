@@ -1,0 +1,74 @@
+name: MovableType Monthly Rebuild
+
+on:
+  schedule:
+    # 毎月1日の0:05 日本時間 (UTC 15:05 前日) に実行
+    - cron: '5 15 1 * *'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # 30分でタイムアウト
+    env:
+      TZ: Asia/Tokyo  # 日本時間を明示
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd MovableTypeRebuilder
+        pip install -r requirements.txt
+        
+    - name: Create logs directory
+      run: |
+        cd MovableTypeRebuilder
+        mkdir -p logs
+        
+    - name: Run MovableType rebuild
+      env:
+        MT_SITE_URL: ${{ secrets.MT_SITE_URL }}
+        MT_USERNAME: ${{ secrets.MT_USERNAME }}
+        MT_PASSWORD: ${{ secrets.MT_PASSWORD }}
+        MT_BLOG_ID: ${{ secrets.MT_BLOG_ID }}
+        MT_SITE_NAME: ${{ secrets.MT_SITE_NAME }}
+        EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        TO_EMAIL: ${{ secrets.TO_EMAIL }}
+      run: |
+        cd MovableTypeRebuilder
+        echo "=== MovableType再構築開始 ==="
+        echo "実行時刻: $(date)"
+        echo "対象サイト: ${{ secrets.MT_SITE_NAME }} (blog_id: ${{ secrets.MT_BLOG_ID }})"
+        python mt_rebuilder_github_action.py
+        echo "=== MovableType再構築完了 ==="
+        echo "完了時刻: $(date)"
+        
+    - name: Check logs
+      if: always()
+      run: |
+        cd MovableTypeRebuilder
+        echo "=== ログファイル確認 ==="
+        ls -la logs/ || echo "ログディレクトリが存在しません"
+        if [ -f logs/mt_rebuilder_$(date +%Y%m%d).log ]; then
+          echo "=== 今日のログ内容 ==="
+          cat logs/mt_rebuilder_$(date +%Y%m%d).log
+        else
+          echo "今日のログファイルが見つかりません"
+        fi
+        
+    - name: Upload logs
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: mt-rebuild-logs
+        path: MovableTypeRebuilder/logs/
+        retention-days: 30
