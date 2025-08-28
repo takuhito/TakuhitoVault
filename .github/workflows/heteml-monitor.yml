@@ -38,6 +38,12 @@ jobs:
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         
+    - name: Download previous file history
+      uses: actions/download-artifact@v4
+      with:
+        name: heteml-file-history
+        path: HETEMLMonitor/
+        
     - name: Debug environment
       run: |
         cd HETEMLMonitor
@@ -46,6 +52,8 @@ jobs:
         ls -la
         echo "Config file exists:"
         ls -la config.py || echo "Config file not found"
+        echo "File history exists:"
+        ls -la file_history.json || echo "File history not found"
         echo "Python version:"
         python --version
         echo "Installed packages:"
@@ -87,6 +95,14 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        
+    - name: Upload file history as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: heteml-file-history
+        path: HETEMLMonitor/file_history.json
+        retention-days: 30
         
     - name: Upload logs as artifacts
       if: always()

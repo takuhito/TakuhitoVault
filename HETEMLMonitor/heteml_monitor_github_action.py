@@ -85,6 +85,8 @@ class HETEMLMonitorGitHubAction:
                 self.logger.info(f"ファイル履歴を読み込みました: {len(self.known_files)}ファイル")
             except Exception as e:
                 self.logger.error(f"ファイル履歴の読み込みに失敗: {e}")
+        else:
+            self.logger.info("ファイル履歴が見つからないため、新規作成します")
                 
     def save_file_history(self):
         """ファイル履歴の保存"""
@@ -187,18 +189,27 @@ class HETEMLMonitorGitHubAction:
         current_files = set(self.list_files())
         new_files = []
         
+        # 初回実行時（履歴が空の場合）は既存ファイルを履歴に追加するだけで通知しない
+        is_first_run = len(self.known_files) == 0
+        
         for file_path in current_files:
             if file_path not in self.known_files:
                 # 新しいファイルを発見
-                new_files.append(file_path)
+                if not is_first_run:
+                    new_files.append(file_path)
+                    self.logger.info(f"新しいファイルを発見: {file_path}")
+                else:
+                    self.logger.info(f"初回実行: 既存ファイルを履歴に追加: {file_path}")
+                
                 self.known_files.add(file_path)
                 
                 # ハッシュ値を保存
                 file_hash = self.get_file_hash(file_path)
                 if file_hash:
                     self.file_hashes[file_path] = file_hash
-                    
-                self.logger.info(f"新しいファイルを発見: {file_path}")
+        
+        if is_first_run:
+            self.logger.info(f"初回実行: {len(current_files)}個の既存ファイルを履歴に追加しました")
         
         return new_files
     
@@ -279,15 +290,25 @@ class HETEMLMonitorGitHubAction:
         """監視を実行"""
         self.logger.info("HETEMLサーバ監視を開始します")
         
+        # ファイル履歴の状態をログ出力
+        self.logger.info(f"現在のファイル履歴: {len(self.known_files)}ファイル")
+        self.logger.info(f"現在のハッシュ履歴: {len(self.file_hashes)}ファイル")
+        
         # SSH接続
         if not self.connect_ssh():
             self.logger.error("SSH接続に失敗したため監視を終了します")
             return False
         
         try:
+            # 監視対象フォルダの現在のファイル数を確認
+            current_files = self.list_files()
+            self.logger.info(f"監視対象フォルダの現在のファイル数: {len(current_files)}")
+            
             # 新しいファイルと変更されたファイルをチェック
             new_files = self.check_new_files()
             modified_files = self.check_modified_files()
+            
+            self.logger.info(f"検出結果 - 新しいファイル: {len(new_files)}個, 変更されたファイル: {len(modified_files)}個")
             
             # 通知を送信
             if new_files or modified_files:
