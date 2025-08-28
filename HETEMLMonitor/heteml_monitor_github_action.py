@@ -85,8 +85,13 @@ class HETEMLMonitorGitHubAction:
                 self.logger.info(f"ファイル履歴を読み込みました: {len(self.known_files)}ファイル")
             except Exception as e:
                 self.logger.error(f"ファイル履歴の読み込みに失敗: {e}")
+                # エラーの場合は新規作成
+                self.known_files = set()
+                self.file_hashes = {}
         else:
-            self.logger.info("ファイル履歴が見つからないため、新規作成します")
+            self.logger.info("ファイル履歴が見つからないため、新規作成します（初回実行またはアーティファクト未作成）")
+            self.known_files = set()
+            self.file_hashes = {}
                 
     def save_file_history(self):
         """ファイル履歴の保存"""
