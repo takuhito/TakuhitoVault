@@ -65,12 +65,18 @@ class HETEMLMonitorGitHubAction:
         """ログ設定 - GitHub Actions環境用"""
         log_config = LOG_CONFIG
         
-        # GitHub Actions環境では標準出力にログを出力
+        # ログディレクトリの作成
+        log_dir = os.path.dirname(log_config['file'])
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        
+        # GitHub Actions環境では標準出力とファイルの両方にログを出力
         logging.basicConfig(
             level=getattr(logging, log_config['level']),
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.StreamHandler(sys.stdout)
+                logging.StreamHandler(sys.stdout),
+                logging.FileHandler(log_config['file'], encoding='utf-8')
             ]
         )
         

@@ -105,6 +105,18 @@ jobs:
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         
+    - name: Check and upload file history
+      if: always()
+      run: |
+        cd HETEMLMonitor
+        if [ -f file_history.json ]; then
+          echo "File history exists, will upload"
+          echo "File size: $(wc -c < file_history.json) bytes"
+        else
+          echo "File history does not exist, creating empty one"
+          echo '{"files": [], "hashes": {}, "last_updated": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > file_history.json
+        fi
+        
     - name: Upload file history as artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -112,6 +124,19 @@ jobs:
         name: heteml-file-history
         path: HETEMLMonitor/file_history.json
         retention-days: 30
+        
+    - name: Check and upload logs
+      if: always()
+      run: |
+        cd HETEMLMonitor
+        if [ -d logs ] && [ "$(ls -A logs)" ]; then
+          echo "Logs exist, will upload"
+          ls -la logs/
+        else
+          echo "No logs found, creating empty log file"
+          mkdir -p logs
+          echo "$(date): No logs generated in this run" > logs/heteml_monitor.log
+        fi
         
     - name: Upload logs as artifacts
       if: always()
