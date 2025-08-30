@@ -286,9 +286,6 @@ class HETEMLMonitorGitHubAction:
         if self.notification_manager.send_email_github_action(github_message):
             success_count += 1
         
-        if self.notification_manager.send_line(github_message):
-            success_count += 1
-        
         if self.notification_manager.send_slack(github_message):
             success_count += 1
         
