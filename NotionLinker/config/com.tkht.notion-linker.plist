@@ -9,7 +9,7 @@
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>$HOME/NotionLinker/NotionLinker/run_linker.sh</string>
+    <string>/Users/takuhito/NotionWorkflowTools/NotionLinker/run_linker.sh</string>
   </array>
 
   <!-- 15分間隔（毎時 0/15/30/45） -->
