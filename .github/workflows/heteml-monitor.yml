@@ -5,6 +5,11 @@ on:
     # 6時間ごとに実行（月124時間 = 7,440分）
     - cron: '0 */6 * * *'
   workflow_dispatch:  # 手動実行も可能
+  push:
+    branches: [ main ]
+    paths:
+      - 'HETEMLMonitor/**'
+      - '.github/workflows/heteml-monitor.yml'
 
 jobs:
   monitor:
@@ -145,3 +150,15 @@ jobs:
         name: heteml-monitor-logs
         path: HETEMLMonitor/logs/
         retention-days: 7
+        
+    - name: Workflow completion summary
+      if: always()
+      run: |
+        echo "=== HETEML Monitor Workflow Summary ==="
+        echo "Workflow completed at: $(date)"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Event: ${{ github.event_name }}"
+        echo "======================================"
