@@ -204,6 +204,8 @@ MovableType再構築システム
             
             # GitHub Actions環境かどうかを判定
             is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+            self.logger.info(f"環境変数 GITHUB_ACTIONS: {os.getenv('GITHUB_ACTIONS')}")
+            self.logger.info(f"is_github_actions: {is_github_actions}")
             
             if is_github_actions:
                 self.notification_manager.send_email_github_action(message, subject)
@@ -226,11 +228,15 @@ MovableType再構築システム
                 'message': 'MovableTypeへのログインに失敗しました',
                 'timestamp': datetime.now().isoformat()
             }
+            # ログイン失敗時は通知を送信しない
+            self.logger.warning("ログイン失敗のため、メール通知を送信しません")
+            self.logger.info("=== MovableType再構築完了（ログイン失敗） ===")
+            return result
         else:
             # 再構築実行
             result = self.trigger_rebuild()
         
-        # 通知送信
+        # 通知送信（ログイン成功時のみ）
         self.send_email_notification(result)
         
         self.logger.info("=== MovableType再構築完了 ===")
