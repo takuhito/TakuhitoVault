@@ -31,6 +31,7 @@ class ServiceMonitor:
             'heteml_monitor': {
                 'name': 'HETEMLMonitor',
                 'plist': 'com.user.heteml-monitor.plist',
+                'plist_path': PROJECT_ROOT / 'HETEMLMonitor' / 'com.user.heteml-monitor.plist',
                 'log_dir': PROJECT_ROOT / 'HETEMLMonitor' / 'logs',
                 'check_interval': 300,  # 5分
                 'last_check': None,
@@ -39,6 +40,7 @@ class ServiceMonitor:
             'notion_linker': {
                 'name': 'NotionLinker',
                 'plist': 'com.tkht.notion-linker.plist',
+                'plist_path': PROJECT_ROOT / 'NotionLinker' / 'config' / 'com.tkht.notion-linker.plist',
                 'log_dir': Path('/Users/takuhito/Library/Logs'),
                 'check_interval': 900,  # 15分
                 'last_check': None,
@@ -47,6 +49,7 @@ class ServiceMonitor:
             'movabletype_rebuilder': {
                 'name': 'MovableTypeRebuilder',
                 'plist': 'com.user.movabletype-rebuilder.plist',
+                'plist_path': PROJECT_ROOT / 'MovableTypeRebuilder' / 'scheduler' / 'com.user.movabletype-rebuilder.plist',
                 'log_dir': PROJECT_ROOT / 'MovableTypeRebuilder' / 'logs',
                 'check_interval': 86400,  # 24時間（毎月1日のみ実行）
                 'last_check': None,
@@ -168,22 +171,14 @@ class ServiceMonitor:
             self.logger.error(f"Log check error for {service_name}: {e}")
             return {'status': 'error', 'message': str(e)}
     
-    def restart_service(self, service_name, plist_name):
+    def restart_service(self, service_name, plist_name, plist_path):
         """サービスの再起動"""
         try:
             self.logger.info(f"Restarting {service_name}...")
             
-            # plistファイルのパスを取得
-            plist_path = Path.home() / 'Library' / 'LaunchAgents' / f'{plist_name}.plist'
-            
             if not plist_path.exists():
-                # プロジェクト内のplistファイルを探す
-                project_plist_path = PROJECT_ROOT / 'config' / f'{plist_name}.plist'
-                if project_plist_path.exists():
-                    plist_path = project_plist_path
-                else:
-                    self.logger.error(f"plist file not found for {service_name}")
-                    return False
+                self.logger.error(f"plist file not found for {service_name}: {plist_path}")
+                return False
             
             # サービスを停止
             unload_result = subprocess.run(
@@ -239,6 +234,7 @@ class ServiceMonitor:
         """個別サービスの確認"""
         service_name = service_info['name']
         plist_name = service_info['plist']
+        plist_path = service_info['plist_path']
         log_dir = service_info['log_dir']
         
         self.logger.info(f"Checking {service_name}...")
@@ -268,7 +264,7 @@ class ServiceMonitor:
             self.logger.warning(f"{service_name} has issues: {status}")
             
             # 自動復旧の実行
-            if self.restart_service(service_name, plist_name):
+            if self.restart_service(service_name, plist_name, plist_path):
                 # 再起動後の確認
                 time.sleep(5)
                 new_status = self.check_launchd_service(service_name, plist_name)
