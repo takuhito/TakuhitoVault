@@ -35,24 +35,6 @@
     <dict>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin</string>
-        <key>MT_SITE_URL</key>
-        <string>https://your-movabletype-site.com</string>
-        <key>MT_USERNAME</key>
-        <string>your-username</string>
-        <key>MT_PASSWORD</key>
-        <string>your-password</string>
-        <key>MT_BLOG_ID</key>
-        <string>1</string>
-        <key>MT_SITE_NAME</key>
-        <string>MovableTypeサイト</string>
-        <key>EMAIL_USERNAME</key>
-        <string>your-email@gmail.com</string>
-        <key>EMAIL_PASSWORD</key>
-        <string>your-app-password</string>
-        <key>FROM_EMAIL</key>
-        <string>your-email@gmail.com</string>
-        <key>TO_EMAIL</key>
-        <string>your-email@gmail.com</string>
     </dict>
     
     <key>RunAtLoad</key>

@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 
 # 設定ファイルのインポート
 try:
+    # スクリプトディレクトリから親ディレクトリのconfig.pyを読み込む
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from config import MT_CONFIG, NOTIFICATION_CONFIG, LOG_CONFIG, EXECUTION_CONFIG
     from notifications import NotificationManager
 except ImportError:
