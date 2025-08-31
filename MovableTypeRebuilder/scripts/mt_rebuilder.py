@@ -134,6 +134,11 @@ class MovableTypeRebuilder:
                 
         except Exception as e:
             self.logger.error(f"ログインエラー: {e}")
+            # より詳細なエラー情報をログに出力
+            if hasattr(e, 'response'):
+                self.logger.error(f"レスポンスステータス: {e.response.status_code}")
+                self.logger.error(f"レスポンスヘッダー: {dict(e.response.headers)}")
+                self.logger.error(f"レスポンス内容: {e.response.text[:1000]}")
             return False
     
     def trigger_rebuild(self) -> Dict[str, Any]:
