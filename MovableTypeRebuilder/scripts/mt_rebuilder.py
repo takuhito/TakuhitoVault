@@ -88,7 +88,7 @@ class MovableTypeRebuilder:
             self.logger.info("MovableTypeにログイン中...")
             
             # ログインページにアクセスしてセッションを確立
-            login_url = f"{self.mt_url}/mt.cgi"
+            login_url = self.mt_url
             login_data = {
                 'username': self.mt_username,
                 'password': self.mt_password,
@@ -134,7 +134,7 @@ class MovableTypeRebuilder:
             self.logger.info("サイト再構築を開始...")
             
             # 再構築URL
-            rebuild_url = f"{self.mt_url}/mt.cgi"
+            rebuild_url = self.mt_url
             rebuild_data = {
                 '__mode': 'rebuild',
                 'blog_id': self.mt_blog_id,  # 設定されたブログID
