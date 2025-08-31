@@ -43,11 +43,19 @@ jobs:
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        REBUILD_INTERVAL_MINUTES: 5
+        MAX_RETRY_COUNT: 3
+        LOG_LEVEL: INFO
       run: |
         cd MovableTypeRebuilder
         echo "=== MovableType再構築開始 ==="
         echo "実行時刻: $(date)"
         echo "対象サイト: ${{ secrets.MT_SITE_NAME }} (blog_id: ${{ secrets.MT_BLOG_ID }})"
+        echo "環境変数確認:"
+        echo "MT_SITE_URL: $MT_SITE_URL"
+        echo "MT_USERNAME: $MT_USERNAME"
+        echo "MT_BLOG_ID: $MT_BLOG_ID"
+        echo "MT_SITE_NAME: $MT_SITE_NAME"
         python scripts/mt_rebuilder.py
         echo "=== MovableType再構築完了 ==="
         echo "完了時刻: $(date)"
