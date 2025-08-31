@@ -202,8 +202,15 @@ MovableType再構築結果
 MovableType再構築システム
             """.strip()
             
-            self.notification_manager.send_email(message, subject)
-            self.logger.info("メール通知を送信しました")
+            # GitHub Actions環境かどうかを判定
+            is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+            
+            if is_github_actions:
+                self.notification_manager.send_email_github_action(message, subject)
+                self.logger.info("GitHub Actions版メール通知を送信しました")
+            else:
+                self.notification_manager.send_email(message, subject)
+                self.logger.info("ローカル版メール通知を送信しました")
             
         except Exception as e:
             self.logger.error(f"メール通知エラー: {e}")
