@@ -7,8 +7,9 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>/Users/takuhito/NotionWorkflowTools/MovableTypeRebuilder/scripts/mt_rebuilder.py</string>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd /Users/takuhito/NotionWorkflowTools/MovableTypeRebuilder && source venv/bin/activate && python scripts/mt_rebuilder.py</string>
     </array>
     
     <key>StartCalendarInterval</key>
@@ -34,6 +35,24 @@
     <dict>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin</string>
+        <key>MT_SITE_URL</key>
+        <string>https://your-movabletype-site.com</string>
+        <key>MT_USERNAME</key>
+        <string>your-username</string>
+        <key>MT_PASSWORD</key>
+        <string>your-password</string>
+        <key>MT_BLOG_ID</key>
+        <string>1</string>
+        <key>MT_SITE_NAME</key>
+        <string>MovableTypeサイト</string>
+        <key>EMAIL_USERNAME</key>
+        <string>your-email@gmail.com</string>
+        <key>EMAIL_PASSWORD</key>
+        <string>your-app-password</string>
+        <key>FROM_EMAIL</key>
+        <string>your-email@gmail.com</string>
+        <key>TO_EMAIL</key>
+        <string>your-email@gmail.com</string>
     </dict>
     
     <key>RunAtLoad</key>

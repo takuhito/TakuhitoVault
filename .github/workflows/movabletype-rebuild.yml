@@ -48,7 +48,7 @@ jobs:
         echo "=== MovableType再構築開始 ==="
         echo "実行時刻: $(date)"
         echo "対象サイト: ${{ secrets.MT_SITE_NAME }} (blog_id: ${{ secrets.MT_BLOG_ID }})"
-        python mt_rebuilder_github_action.py
+        python scripts/mt_rebuilder.py
         echo "=== MovableType再構築完了 ==="
         echo "完了時刻: $(date)"
         
