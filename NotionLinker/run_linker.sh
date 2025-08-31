@@ -33,12 +33,7 @@ if [ ! -f ".env" ]; then
     echo "README_extended.md を参考に .env ファイルを作成してください。"
     echo "初回実行時は DRY_RUN=true でテストすることをお勧めします。"
     echo ""
-    echo "続行しますか？ (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "実行を中止しました。"
-        exit 1
-    fi
+    echo "launchdでの自動実行のため、.envファイルなしでも続行します。"
 fi
 
 # 実行前の確認
@@ -57,12 +52,7 @@ else
     echo "⚠️  本番モード（DRY_RUN=false）で実行します"
     echo "   Notion に実際に書き込みが行われます"
     echo ""
-    echo "続行しますか？ (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "実行を中止しました。"
-        exit 1
-    fi
+    echo "launchdでの自動実行のため、本番モードでも続行します。"
 fi
 
 # 実行
