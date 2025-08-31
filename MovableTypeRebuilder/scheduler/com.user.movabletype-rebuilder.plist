@@ -7,9 +7,9 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>-c</string>
-        <string>cd /Users/takuhito/NotionWorkflowTools/MovableTypeRebuilder && source venv/bin/activate && python scripts/mt_rebuilder.py --schedule</string>
+        <string>/Users/takuhito/NotionWorkflowTools/MovableTypeRebuilder/venv/bin/python</string>
+        <string>scripts/mt_rebuilder.py</string>
+        <string>--schedule</string>
     </array>
     
     <key>StartCalendarInterval</key>
