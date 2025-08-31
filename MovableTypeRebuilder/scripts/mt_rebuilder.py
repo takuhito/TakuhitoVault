@@ -98,12 +98,20 @@ class MovableTypeRebuilder:
             response = self.session.post(login_url, data=login_data, timeout=30)
             response.raise_for_status()
             
+            # デバッグ情報をログに出力
+            self.logger.info(f"ログインURL: {login_url}")
+            self.logger.info(f"レスポンスステータス: {response.status_code}")
+            self.logger.info(f"クッキー数: {len(self.session.cookies)}")
+            self.logger.info(f"レスポンスサイズ: {len(response.text)} bytes")
+            
             # ログイン成功の確認（より柔軟な判定）
             success_indicators = ['ログアウト', 'logout', 'dashboard', '管理画面', '完了']
             failure_indicators = ['ログイン', 'login', 'エラー', 'error', '失敗', '認証']
             
             success_count = sum(1 for indicator in success_indicators if indicator.lower() in response.text.lower())
             failure_count = sum(1 for indicator in failure_indicators if indicator.lower() in response.text.lower())
+            
+            self.logger.info(f"成功指標数: {success_count}, 失敗指標数: {failure_count}")
             
             # クッキーが設定されているかも確認
             has_cookies = len(self.session.cookies) > 0
@@ -113,6 +121,7 @@ class MovableTypeRebuilder:
                 return True
             else:
                 self.logger.error("ログイン失敗: 認証情報が正しくない可能性があります")
+                self.logger.error(f"レスポンス内容（最初の500文字）: {response.text[:500]}")
                 return False
                 
         except Exception as e:
