@@ -87,7 +87,14 @@ class MovableTypeRebuilder:
         try:
             self.logger.info("MovableTypeにログイン中...")
             
-            # ログインページにアクセスしてセッションを確立
+            # まずログインページにGETでアクセスしてセッションを確立
+            login_page_url = f"{self.mt_url}?__mode=login"
+            self.logger.info(f"ログインページにアクセス: {login_page_url}")
+            
+            response = self.session.get(login_page_url, timeout=30)
+            response.raise_for_status()
+            
+            # ログインフォームをPOSTで送信
             login_url = self.mt_url
             login_data = {
                 'username': self.mt_username,
@@ -95,6 +102,7 @@ class MovableTypeRebuilder:
                 '__mode': 'login'
             }
             
+            self.logger.info(f"ログインデータを送信: {login_url}")
             response = self.session.post(login_url, data=login_data, timeout=30)
             response.raise_for_status()
             
