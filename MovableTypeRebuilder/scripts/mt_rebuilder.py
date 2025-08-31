@@ -223,20 +223,23 @@ MovableType再構築システム
         
         # ログイン
         if not self.login_to_mt():
+            # ログイン失敗の詳細情報を取得
+            error_details = "ログイン失敗の詳細: 認証エラーまたはアクセス拒否"
             result = {
                 'success': False,
-                'message': 'MovableTypeへのログインに失敗しました',
+                'message': f'MovableTypeへのログインに失敗しました - {error_details}',
                 'timestamp': datetime.now().isoformat()
             }
-            # ログイン失敗時は通知を送信しない
-            self.logger.warning("ログイン失敗のため、メール通知を送信しません")
+            # ログイン失敗時も通知を送信（重要：Actionの実行状況を把握するため）
+            self.logger.warning("ログイン失敗のため、失敗通知を送信します")
+            self.send_email_notification(result)
             self.logger.info("=== MovableType再構築完了（ログイン失敗） ===")
             return result
         else:
             # 再構築実行
             result = self.trigger_rebuild()
         
-        # 通知送信（ログイン成功時のみ）
+        # 通知送信（ログイン成功時）
         self.send_email_notification(result)
         
         self.logger.info("=== MovableType再構築完了 ===")
