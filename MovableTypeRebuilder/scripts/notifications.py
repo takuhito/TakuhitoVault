@@ -38,7 +38,7 @@ class NotificationManager:
             msg = MIMEMultipart()
             msg['From'] = email_config['from_email']
             msg['To'] = email_config['to_email']
-            msg['Subject'] = subject or "MovableType再構築通知"
+            msg['Subject'] = subject or "[ローカル版] MovableType再構築通知"
             
             # 本文の追加
             msg.attach(MIMEText(message, 'plain', 'utf-8'))

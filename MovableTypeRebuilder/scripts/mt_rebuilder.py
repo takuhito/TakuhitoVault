@@ -193,7 +193,10 @@ class MovableTypeRebuilder:
         """メール通知を送信"""
         try:
             status = "✅ 成功" if result['success'] else "❌ 失敗"
-            subject = f"MovableType再構築結果 - {self.mt_site_name} - {status}"
+            # 環境に応じてプレフィックスを設定
+            is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+            prefix = "[GitHub Actions]" if is_github_actions else "[ローカル版]"
+            subject = f"{prefix} MovableType再構築結果 - {self.mt_site_name} - {status}"
             
             message = f"""
 MovableType再構築結果
