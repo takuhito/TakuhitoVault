@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.service-monitor</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/takuhito/NotionWorkflowTools/scripts/monitor_all_services.py</string>
+        <string>--continuous</string>
+    </array>
+
+    <!-- 5分間隔で監視 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>5</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>10</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>15</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>20</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>25</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>30</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>35</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>40</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>45</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>50</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>55</integer>
+        </dict>
+    </array>
+
+    <!-- スリープ復帰時にも起動 -->
+    <key>LaunchEvents</key>
+    <dict>
+        <key>com.apple.iokit.pwr_mgt.systempowerstate</key>
+        <dict>
+            <key>OnWake</key>
+            <true/>
+        </dict>
+    </dict>
+
+    <!-- 起動直後にも実行 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- プロセス管理 -->
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <!-- スロットリング（60秒間隔で再起動を制限） -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <!-- ログ出力 -->
+    <key>StandardOutPath</key>
+    <string>/Users/takuhito/Library/Logs/service-monitor.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/takuhito/Library/Logs/service-monitor.err.log</string>
+
+    <!-- 環境変数 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin</string>
+        <key>PYTHONPATH</key>
+        <string>/Users/takuhito/NotionWorkflowTools</string>
+    </dict>
+</dict>
+</plist>
