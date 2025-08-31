@@ -257,12 +257,21 @@ MovableType再構築システム
         """スケジュール実行"""
         self.logger.info("スケジュール実行を開始")
         
-        # 毎月1日の0:01に実行
-        schedule.every().month.at("00:01").do(self.execute_rebuild)
+        # 毎月1日の0:01に実行（scheduleライブラリの制限により、毎日0:01に実行して日付をチェック）
+        schedule.every().day.at("00:01").do(self._check_and_execute_monthly)
         
         while True:
             schedule.run_pending()
             time.sleep(60)  # 1分ごとにチェック
+    
+    def _check_and_execute_monthly(self):
+        """毎月1日かどうかをチェックして実行"""
+        current_date = datetime.now()
+        if current_date.day == 1:
+            self.logger.info("毎月1日を検出しました。MovableType再構築を実行します。")
+            self.execute_rebuild()
+        else:
+            self.logger.debug(f"毎月1日ではありません。現在の日付: {current_date.day}日")
     
     def run_test(self):
         """テスト実行"""
