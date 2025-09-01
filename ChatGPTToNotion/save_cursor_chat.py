@@ -280,25 +280,11 @@ def parse_markdown_to_blocks(content: str, max_blocks: int = 90):
     return all_blocks
 
 def add_content_to_page(notion, page_id, content):
-    """ページにMarkdownコンテンツを追加（レンダリングされたプレビュー + ソース）"""
+    """ページにMarkdownコンテンツを追加（レンダリングされたプレビューのみ）"""
     try:
         children = []
         
-        # 1. Markdownプレビューセクション（レンダリングされた状態）
-        children.append({
-            "object": "block",
-            "type": "heading_2",
-            "heading_2": {
-                "rich_text": [
-                    {
-                        "type": "text",
-                        "text": {
-                            "content": "📖 Markdown Preview (Rendered)"
-                        }
-                    }
-                ]
-            }
-        })
+
         
         # MarkdownをNotionブロック形式に変換して追加（既存の高機能版を使用）
         all_rendered_blocks = parse_markdown_to_blocks(content)
@@ -306,40 +292,7 @@ def add_content_to_page(notion, page_id, content):
         if all_rendered_blocks:
             children.extend(all_rendered_blocks[0])
         
-        # 2. Markdownソースセクション
-        children.append({
-            "object": "block",
-            "type": "heading_2",
-            "heading_2": {
-                "rich_text": [
-                    {
-                        "type": "text",
-                        "text": {
-                            "content": "📝 Markdown Source"
-                        }
-                    }
-                ]
-            }
-        })
-        
-        # Markdownソース用のコードブロック（2000文字制限対応）
-        content_chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
-        for i, chunk in enumerate(content_chunks):
-            children.append({
-                "object": "block",
-                "type": "code",
-                "code": {
-                    "language": "markdown",
-                    "rich_text": [
-                        {
-                            "type": "text",
-                            "text": {
-                                "content": chunk
-                            }
-                        }
-                    ]
-                }
-            })
+
         
         # ブロックを追加（Notion APIの制限により100ブロックずつ）
         batch_size = 100
