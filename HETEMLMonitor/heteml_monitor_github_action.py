@@ -167,27 +167,15 @@ class HETEMLMonitorGitHubAction:
             return ""
     
     def list_files(self) -> List[str]:
-        """監視対象フォルダ内のファイル一覧を取得"""
+        """監視対象フォルダ内のファイル一覧を取得（再帰的）"""
         try:
             target_path = MONITOR_CONFIG['target_path']
             file_pattern = MONITOR_CONFIG['file_pattern']
             exclude_patterns = MONITOR_CONFIG.get('exclude_patterns', [])
             
-            # SFTPでファイル一覧を取得
+            # SFTPでファイル一覧を再帰的に取得
             files = []
-            for item in self.sftp_client.listdir_attr(target_path):
-                if item.filename.startswith('.'):
-                    continue
-                    
-                # 除外パターンのチェック
-                if any(pattern in item.filename for pattern in exclude_patterns):
-                    continue
-                
-                file_path = os.path.join(target_path, item.filename)
-                if self.sftp_client.stat(file_path).st_mode & 0o40000:  # ディレクトリ
-                    continue
-                    
-                files.append(file_path)
+            self._scan_directory_recursive(target_path, files, file_pattern, exclude_patterns)
             
             return files
             
@@ -195,14 +183,41 @@ class HETEMLMonitorGitHubAction:
             self.logger.error(f"ファイル一覧の取得に失敗: {e}")
             return []
     
-    def check_new_files(self) -> List[str]:
-        """新しいファイルをチェック"""
+    def _scan_directory_recursive(self, current_path: str, files: List[str], file_pattern: str, exclude_patterns: List[str]):
+        """ディレクトリを再帰的にスキャン"""
+        try:
+            for item in self.sftp_client.listdir_attr(current_path):
+                if item.filename.startswith('.'):
+                    continue
+                    
+                # 除外パターンのチェック
+                if any(pattern in item.filename for pattern in exclude_patterns):
+                    continue
+                
+                file_path = os.path.join(current_path, item.filename)
+                
+                # ディレクトリかどうかをチェック
+                if self.sftp_client.stat(file_path).st_mode & 0o40000:  # ディレクトリ
+                    # サブディレクトリを再帰的にスキャン
+                    self._scan_directory_recursive(file_path, files, file_pattern, exclude_patterns)
+                else:
+                    # ファイルの場合
+                    files.append(file_path)
+                    
+        except Exception as e:
+            self.logger.warning(f"ディレクトリスキャンエラー {current_path}: {e}")
+    
+    def check_file_changes(self) -> Dict[str, List[str]]:
+        """ファイルの変更をチェック（新規・削除・変更）"""
         current_files = set(self.list_files())
         new_files = []
+        deleted_files = []
+        modified_files = []
         
         # 初回実行時（履歴が空の場合）は既存ファイルを履歴に追加するだけで通知しない
         is_first_run = len(self.known_files) == 0
         
+        # 新規ファイルのチェック
         for file_path in current_files:
             if file_path not in self.known_files:
                 # 新しいファイルを発見
@@ -219,60 +234,76 @@ class HETEMLMonitorGitHubAction:
                 if file_hash:
                     self.file_hashes[file_path] = file_hash
         
+        # 削除ファイルのチェック
+        if not is_first_run:
+            for known_file_path in list(self.known_files):
+                if known_file_path not in current_files:
+                    deleted_files.append(known_file_path)
+                    self.logger.info(f"ファイルが削除されました: {known_file_path}")
+                    self.known_files.discard(known_file_path)
+                    self.file_hashes.pop(known_file_path, None)
+        
+        # 変更ファイルのチェック
+        if not is_first_run:
+            for file_path in self.known_files:
+                if file_path in current_files:
+                    current_hash = self.get_file_hash(file_path)
+                    stored_hash = self.file_hashes.get(file_path, "")
+                    
+                    if current_hash and current_hash != stored_hash and stored_hash != "":
+                        modified_files.append(file_path)
+                        self.file_hashes[file_path] = current_hash
+                        self.logger.info(f"ファイルが変更されました: {file_path}")
+        
         if is_first_run:
             self.logger.info(f"初回実行: {len(current_files)}個の既存ファイルを履歴に追加しました")
         
-        return new_files
+        return {
+            'new': new_files,
+            'deleted': deleted_files,
+            'modified': modified_files
+        }
     
-    def check_modified_files(self) -> List[str]:
-        """変更されたファイルをチェック"""
-        modified_files = []
-        
-        for file_path in self.known_files:
-            try:
-                # SFTPでファイルの存在確認
-                self.sftp_client.stat(file_path)
-            except FileNotFoundError:
-                # ファイルが削除された
-                self.known_files.discard(file_path)
-                self.file_hashes.pop(file_path, None)
-                self.logger.info(f"ファイルが削除されました: {file_path}")
-                continue
-            except Exception as e:
-                # その他のエラー（アクセス権限など）
-                self.logger.warning(f"ファイル確認エラー {file_path}: {e}")
-                continue
-            
-            # ハッシュ値を比較
-            current_hash = self.get_file_hash(file_path)
-            stored_hash = self.file_hashes.get(file_path, "")
-            
-            if current_hash and current_hash != stored_hash:
-                modified_files.append(file_path)
-                self.file_hashes[file_path] = current_hash
-                self.logger.info(f"ファイルが変更されました: {file_path}")
-        
-        return modified_files
+
     
-    def send_notifications(self, new_files: List[str], modified_files: List[str]):
+    def send_notifications(self, file_changes: Dict[str, List[str]]):
         """通知を送信"""
-        if not new_files and not modified_files:
+        new_files = file_changes.get('new', [])
+        deleted_files = file_changes.get('deleted', [])
+        modified_files = file_changes.get('modified', [])
+        
+        if not new_files and not deleted_files and not modified_files:
             return
         
         # 通知メッセージの作成
         message_parts = []
         
         if new_files:
-            message_parts.append("🆕 新しいファイル:")
+            message_parts.append(f"📁 新規ファイル ({len(new_files)}件):")
             for file_path in new_files:
                 filename = os.path.basename(file_path)
-                message_parts.append(f"  • {filename}")
+                folder_path = os.path.dirname(file_path)
+                relative_folder = folder_path.replace(MONITOR_CONFIG['target_path'], '').strip('/')
+                folder_display = f"/{relative_folder}" if relative_folder else "/"
+                message_parts.append(f"  • {filename} (フォルダ: {folder_display})")
+        
+        if deleted_files:
+            message_parts.append(f"🗑️ 削除ファイル ({len(deleted_files)}件):")
+            for file_path in deleted_files:
+                filename = os.path.basename(file_path)
+                folder_path = os.path.dirname(file_path)
+                relative_folder = folder_path.replace(MONITOR_CONFIG['target_path'], '').strip('/')
+                folder_display = f"/{relative_folder}" if relative_folder else "/"
+                message_parts.append(f"  • {filename} (フォルダ: {folder_display})")
         
         if modified_files:
-            message_parts.append("📝 変更されたファイル:")
+            message_parts.append(f"✏️ 変更ファイル ({len(modified_files)}件):")
             for file_path in modified_files:
                 filename = os.path.basename(file_path)
-                message_parts.append(f"  • {filename}")
+                folder_path = os.path.dirname(file_path)
+                relative_folder = folder_path.replace(MONITOR_CONFIG['target_path'], '').strip('/')
+                folder_display = f"/{relative_folder}" if relative_folder else "/"
+                message_parts.append(f"  • {filename} (フォルダ: {folder_display})")
         
         message = "\n".join(message_parts)
         
@@ -312,17 +343,20 @@ class HETEMLMonitorGitHubAction:
             current_files = self.list_files()
             self.logger.info(f"監視対象フォルダの現在のファイル数: {len(current_files)}")
             
-            # 新しいファイルと変更されたファイルをチェック
-            new_files = self.check_new_files()
-            modified_files = self.check_modified_files()
+            # ファイルの変更をチェック
+            file_changes = self.check_file_changes()
             
-            self.logger.info(f"検出結果 - 新しいファイル: {len(new_files)}個, 変更されたファイル: {len(modified_files)}個")
+            new_files = file_changes.get('new', [])
+            deleted_files = file_changes.get('deleted', [])
+            modified_files = file_changes.get('modified', [])
+            
+            self.logger.info(f"検出結果 - 新規: {len(new_files)}個, 削除: {len(deleted_files)}個, 変更: {len(modified_files)}個")
             
             # 通知を送信
-            if new_files or modified_files:
-                self.send_notifications(new_files, modified_files)
+            if new_files or deleted_files or modified_files:
+                self.send_notifications(file_changes)
             else:
-                self.logger.info("新しいファイルや変更はありませんでした")
+                self.logger.info("ファイルの変更はありませんでした")
             
             # ファイル履歴を保存
             self.save_file_history()

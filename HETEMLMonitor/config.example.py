@@ -22,6 +22,7 @@ MONITOR_CONFIG = {
     'check_interval': 300,                # 監視間隔（秒）
     'file_pattern': '*',                  # 監視するファイルパターン
     'exclude_patterns': ['.*', '*.tmp'],  # 除外するファイルパターン
+    'recursive': True,                    # サブフォルダを再帰的に監視
 }
 
 # 通知設定
