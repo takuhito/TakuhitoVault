@@ -82,12 +82,96 @@ def create_notion_page(chat_data):
         return None
 
 def add_content_to_page(notion, page_id, content):
-    """ページにMarkdownコンテンツを追加"""
+    """ページにMarkdownコンテンツを追加（プレビュー + ソース）"""
     try:
-        # コンテンツを段落ブロックとして追加
         children = []
         
-        # コンテンツを行ごとに分割
+        # 1. Markdownプレビューセクション
+        children.append({
+            "object": "block",
+            "type": "heading_2",
+            "heading_2": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": "📖 Markdown Preview"
+                        }
+                    }
+                ]
+            }
+        })
+        
+        # Markdownプレビュー用のコードブロック（2000文字制限対応）
+        content_chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
+        for i, chunk in enumerate(content_chunks):
+            children.append({
+                "object": "block",
+                "type": "code",
+                "code": {
+                    "language": "markdown",
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {
+                                "content": chunk
+                            }
+                        }
+                    ]
+                }
+            })
+        
+        # 2. Markdownソースセクション
+        children.append({
+            "object": "block",
+            "type": "heading_2",
+            "heading_2": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": "📝 Markdown Source"
+                        }
+                    }
+                ]
+            }
+        })
+        
+        # Markdownソース用のコードブロック（2000文字制限対応）
+        for i, chunk in enumerate(content_chunks):
+            children.append({
+                "object": "block",
+                "type": "code",
+                "code": {
+                    "language": "markdown",
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {
+                                "content": chunk
+                            }
+                        }
+                    ]
+                }
+            })
+        
+        # 3. 構造化されたコンテンツ（見出しと段落）
+        children.append({
+            "object": "block",
+            "type": "heading_2",
+            "heading_2": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": "📄 Structured Content"
+                        }
+                    }
+                ]
+            }
+        })
+        
+        # コンテンツを構造化して追加
         lines = content.split('\n')
         current_paragraph = []
         
