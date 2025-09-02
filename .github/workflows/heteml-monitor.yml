@@ -68,6 +68,16 @@ jobs:
           echo "ファイルの整合性チェック:"
           if jq empty HETEMLMonitor/file_history.json 2>/dev/null; then
             echo "✅ JSON形式が正しい"
+            echo "履歴ファイルの内容分析:"
+            FILE_COUNT=$(jq '.files | length' HETEMLMonitor/file_history.json 2>/dev/null || echo "0")
+            HASH_COUNT=$(jq '.hashes | length' HETEMLMonitor/file_history.json 2>/dev/null || echo "0")
+            echo "  - 履歴ファイル数: $FILE_COUNT"
+            echo "  - ハッシュ履歴数: $HASH_COUNT"
+            if [ "$FILE_COUNT" -gt 0 ]; then
+              echo "✅ 有効な履歴ファイルがダウンロードされました"
+            else
+              echo "⚠️  ダウンロードされた履歴ファイルは空です"
+            fi
           else
             echo "❌ JSON形式が不正"
           fi
@@ -86,6 +96,23 @@ jobs:
           echo "最終更新日時: $(stat -c %y file_history.json)"
           echo "内容の確認:"
           head -10 file_history.json
+          echo ""
+          echo "履歴ファイルの検証:"
+          if jq '.files | length' file_history.json 2>/dev/null; then
+            FILE_COUNT=$(jq '.files | length' file_history.json)
+            HASH_COUNT=$(jq '.hashes | length' file_history.json)
+            echo "✅ 履歴ファイル数: $FILE_COUNT"
+            echo "✅ ハッシュ履歴数: $HASH_COUNT"
+            if [ "$FILE_COUNT" -gt 0 ]; then
+              echo "✅ 有効な履歴ファイルが読み込まれました"
+              echo "注意: 差分監視モードで実行されます"
+            else
+              echo "⚠️  履歴ファイルは空です（初回実行）"
+              echo "注意: 全ファイルスキャンモードで実行されます（時間がかかる可能性）"
+            fi
+          else
+            echo "❌ 履歴ファイルの検証に失敗"
+          fi
         else
           echo "❌ ファイル履歴が見つかりません"
           echo "新しいファイル履歴を作成します..."
@@ -184,9 +211,14 @@ jobs:
             if [ "$FILE_COUNT" -gt 0 ]; then
               echo "✅ 有効な履歴ファイルが読み込まれました"
               echo "注意: 差分監視モードで実行されます"
+              echo "予想実行時間: 5-10分"
             else
               echo "⚠️  履歴ファイルは空です（初回実行）"
               echo "注意: 全ファイルスキャンモードで実行されます（時間がかかる可能性）"
+              echo "予想実行時間: 20-30分（ファイル数による）"
+              echo "最適化の提案:"
+              echo "  - 初回実行時は、サブセットのファイルのみを監視"
+              echo "  - 段階的に監視範囲を拡大"
             fi
           else
             echo "❌ 履歴ファイルの検証に失敗"
@@ -200,6 +232,7 @@ jobs:
         echo ""
         echo "スクリプト実行中..."
         echo "進捗監視: 30分のタイムアウトが設定されています"
+        echo "処理の最適化: 初回実行時は段階的な監視を推奨"
         timeout 30m python -u heteml_monitor_github_action.py 2>&1
         EXIT_CODE=$?
         echo ""
@@ -214,6 +247,7 @@ jobs:
           echo "推奨対策:"
           echo "  - 履歴ファイルの内容を確認"
           echo "  - スクリプトのログを詳細に分析"
+          echo "  - 初回実行時は監視範囲を限定"
         elif [ $EXIT_CODE -eq 0 ]; then
           echo "✅ 正常終了"
         else
