@@ -50,6 +50,26 @@ jobs:
         name: heteml-file-history
         path: HETEMLMonitor/
         
+    - name: Debug file history download
+      run: |
+        echo "=== ファイル履歴ダウンロードのデバッグ ==="
+        echo "現在のディレクトリ: $(pwd)"
+        echo "HETEMLMonitorディレクトリの内容:"
+        ls -la HETEMLMonitor/ || echo "HETEMLMonitorディレクトリが見つかりません"
+        echo ""
+        echo "ファイル履歴の確認:"
+        if [ -f "HETEMLMonitor/file_history.json" ]; then
+          echo "✅ file_history.json が見つかりました"
+          echo "ファイルサイズ: $(wc -c < HETEMLMonitor/file_history.json) bytes"
+          echo "最終更新日時: $(stat -c %y HETEMLMonitor/file_history.json)"
+          echo "最初の数行:"
+          head -5 HETEMLMonitor/file_history.json
+        else
+          echo "❌ file_history.json が見つかりません"
+          echo "これは初回実行またはアーティファクト未作成を示しています"
+        fi
+        echo "======================================"
+        
     - name: Debug environment
       run: |
         cd HETEMLMonitor
@@ -99,8 +119,30 @@ jobs:
       run: |
         cd HETEMLMonitor
         echo "=== スクリプト実行開始 ==="
-        python -u heteml_monitor_github_action.py 2>&1
+        echo "開始時刻: $(date)"
+        echo "タイムアウト設定: 30分"
+        echo "ファイル履歴の状況:"
+        if [ -f "file_history.json" ]; then
+          echo "✅ file_history.json が存在します"
+          echo "サイズ: $(wc -c < file_history.json) bytes"
+        else
+          echo "❌ file_history.json が存在しません"
+        fi
+        echo ""
+        echo "スクリプト実行中..."
+        timeout 30m python -u heteml_monitor_github_action.py 2>&1
+        EXIT_CODE=$?
+        echo ""
         echo "=== スクリプト実行終了 ==="
+        echo "終了時刻: $(date)"
+        echo "終了コード: $EXIT_CODE"
+        if [ $EXIT_CODE -eq 124 ]; then
+          echo "⚠️  タイムアウトが発生しました（30分）"
+        elif [ $EXIT_CODE -eq 0 ]; then
+          echo "✅ 正常終了"
+        else
+          echo "❌ エラーで終了"
+        fi
       env:
         HETEML_PASSWORD: ${{ secrets.HETEML_PASSWORD }}
         EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
