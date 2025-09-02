@@ -50,6 +50,25 @@ jobs:
         name: heteml-file-history
         path: HETEMLMonitor/
         
+    - name: Create file history if not exists
+      run: |
+        cd HETEMLMonitor
+        echo "=== ファイル履歴の確認と作成 ==="
+        if [ -f "file_history.json" ]; then
+          echo "✅ 既存のファイル履歴が見つかりました"
+          echo "ファイルサイズ: $(wc -c < file_history.json) bytes"
+          echo "最終更新日時: $(stat -c %y file_history.json)"
+          echo "内容の確認:"
+          head -10 file_history.json
+        else
+          echo "❌ ファイル履歴が見つかりません"
+          echo "新しいファイル履歴を作成します..."
+          echo '{"files": [], "hashes": {}, "last_updated": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "created_by": "GitHub Actions", "note": "初回実行用の空の履歴ファイル"}' > file_history.json
+          echo "✅ 新しいファイル履歴を作成しました"
+          echo "ファイルサイズ: $(wc -c < file_history.json) bytes"
+        fi
+        echo "======================================"
+        
     - name: Debug file history download
       run: |
         echo "=== ファイル履歴ダウンロードのデバッグ ==="
@@ -121,15 +140,22 @@ jobs:
         echo "=== スクリプト実行開始 ==="
         echo "開始時刻: $(date)"
         echo "タイムアウト設定: 30分"
-        echo "ファイル履歴の状況:"
+        echo ""
+        echo "ファイル履歴の最終確認:"
         if [ -f "file_history.json" ]; then
           echo "✅ file_history.json が存在します"
           echo "サイズ: $(wc -c < file_history.json) bytes"
+          echo "最終更新日時: $(stat -c %y file_history.json)"
+          echo "内容の確認:"
+          head -5 file_history.json
         else
           echo "❌ file_history.json が存在しません"
+          echo "エラー: ファイル履歴が作成されていません"
+          exit 1
         fi
         echo ""
         echo "スクリプト実行中..."
+        echo "注意: 大量のファイルがある場合、処理に時間がかかる可能性があります"
         timeout 30m python -u heteml_monitor_github_action.py 2>&1
         EXIT_CODE=$?
         echo ""
@@ -138,6 +164,7 @@ jobs:
         echo "終了コード: $EXIT_CODE"
         if [ $EXIT_CODE -eq 124 ]; then
           echo "⚠️  タイムアウトが発生しました（30分）"
+          echo "原因: ファイル数が多い、または処理が停止している可能性"
         elif [ $EXIT_CODE -eq 0 ]; then
           echo "✅ 正常終了"
         else
