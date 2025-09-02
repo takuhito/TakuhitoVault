@@ -50,6 +50,32 @@ jobs:
         name: heteml-file-history
         path: HETEMLMonitor/
         
+    - name: Debug artifact download
+      run: |
+        echo "=== アーティファクトダウンロードの詳細デバッグ ==="
+        echo "現在のディレクトリ: $(pwd)"
+        echo "HETEMLMonitorディレクトリの内容:"
+        ls -la HETEMLMonitor/ || echo "HETEMLMonitorディレクトリが見つかりません"
+        echo ""
+        echo "ダウンロードされたファイルの詳細:"
+        if [ -f "HETEMLMonitor/file_history.json" ]; then
+          echo "✅ file_history.json がダウンロードされました"
+          echo "ファイルサイズ: $(wc -c < HETEMLMonitor/file_history.json) bytes"
+          echo "最終更新日時: $(stat -c %y HETEMLMonitor/file_history.json)"
+          echo "内容の確認:"
+          head -10 HETEMLMonitor/file_history.json
+          echo ""
+          echo "ファイルの整合性チェック:"
+          if jq empty HETEMLMonitor/file_history.json 2>/dev/null; then
+            echo "✅ JSON形式が正しい"
+          else
+            echo "❌ JSON形式が不正"
+          fi
+        else
+          echo "❌ file_history.json がダウンロードされていません"
+        fi
+        echo "======================================"
+        
     - name: Create file history if not exists
       run: |
         cd HETEMLMonitor
@@ -148,6 +174,24 @@ jobs:
           echo "最終更新日時: $(stat -c %y file_history.json)"
           echo "内容の確認:"
           head -5 file_history.json
+          echo ""
+          echo "履歴ファイルの詳細検証:"
+          if jq '.files | length' file_history.json 2>/dev/null; then
+            FILE_COUNT=$(jq '.files | length' file_history.json)
+            HASH_COUNT=$(jq '.hashes | length' file_history.json)
+            echo "✅ 履歴ファイル数: $FILE_COUNT"
+            echo "✅ ハッシュ履歴数: $HASH_COUNT"
+            if [ "$FILE_COUNT" -gt 0 ]; then
+              echo "✅ 有効な履歴ファイルが読み込まれました"
+              echo "注意: 差分監視モードで実行されます"
+            else
+              echo "⚠️  履歴ファイルは空です（初回実行）"
+              echo "注意: 全ファイルスキャンモードで実行されます（時間がかかる可能性）"
+            fi
+          else
+            echo "❌ 履歴ファイルの検証に失敗"
+            exit 1
+          fi
         else
           echo "❌ file_history.json が存在しません"
           echo "エラー: ファイル履歴が作成されていません"
@@ -155,7 +199,7 @@ jobs:
         fi
         echo ""
         echo "スクリプト実行中..."
-        echo "注意: 大量のファイルがある場合、処理に時間がかかる可能性があります"
+        echo "進捗監視: 30分のタイムアウトが設定されています"
         timeout 30m python -u heteml_monitor_github_action.py 2>&1
         EXIT_CODE=$?
         echo ""
@@ -164,7 +208,12 @@ jobs:
         echo "終了コード: $EXIT_CODE"
         if [ $EXIT_CODE -eq 124 ]; then
           echo "⚠️  タイムアウトが発生しました（30分）"
-          echo "原因: ファイル数が多い、または処理が停止している可能性"
+          echo "原因分析:"
+          echo "  - ファイル数が多い場合: 初回実行または履歴ファイルが空"
+          echo "  - 処理が停止している場合: ネットワーク問題またはスクリプトの無限ループ"
+          echo "推奨対策:"
+          echo "  - 履歴ファイルの内容を確認"
+          echo "  - スクリプトのログを詳細に分析"
         elif [ $EXIT_CODE -eq 0 ]; then
           echo "✅ 正常終了"
         else
