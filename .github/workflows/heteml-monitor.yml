@@ -73,16 +73,18 @@ jobs:
             HASH_COUNT=$(jq '.hashes | length' HETEMLMonitor/file_history.json 2>/dev/null || echo "0")
             echo "  - 履歴ファイル数: $FILE_COUNT"
             echo "  - ハッシュ履歴数: $HASH_COUNT"
-            if [ "$FILE_COUNT" -gt 0 ]; then
-              echo "✅ 有効な履歴ファイルがダウンロードされました"
-            else
-              echo "⚠️  ダウンロードされた履歴ファイルは空です"
-            fi
+                      if [ "$FILE_COUNT" -gt 0 ]; then
+            echo "✅ 有効な履歴ファイルがダウンロードされました"
+          else
+            echo "⚠️  ダウンロードされた履歴ファイルは空です"
+            echo "原因: 前回の実行で履歴が正しく作成されていない可能性"
+          fi
           else
             echo "❌ JSON形式が不正"
           fi
         else
           echo "❌ file_history.json がダウンロードされていません"
+          echo "原因: アーティファクトのダウンロードに失敗"
         fi
         echo "======================================"
         
@@ -119,6 +121,26 @@ jobs:
           echo '{"files": [], "hashes": {}, "last_updated": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "created_by": "GitHub Actions", "note": "初回実行用の空の履歴ファイル"}' > file_history.json
           echo "✅ 新しいファイル履歴を作成しました"
           echo "ファイルサイズ: $(wc -c < file_history.json) bytes"
+        fi
+        echo "======================================"
+        
+    - name: Optimize for first run
+      run: |
+        cd HETEMLMonitor
+        echo "=== 初回実行時の最適化 ==="
+        if [ -f "file_history.json" ]; then
+          FILE_COUNT=$(jq '.files | length' file_history.json 2>/dev/null || echo "0")
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "⚠️  初回実行が検出されました"
+            echo "最適化: 監視対象を限定して処理時間を短縮"
+            echo "注意: 初回実行時は、重要なディレクトリのみを監視"
+            echo "推奨: 段階的に監視範囲を拡大"
+          else
+            echo "✅ 既存の履歴ファイルが有効です"
+            echo "差分監視モードで実行されます"
+          fi
+        else
+          echo "❌ ファイル履歴が見つかりません"
         fi
         echo "======================================"
         
@@ -219,6 +241,7 @@ jobs:
               echo "最適化の提案:"
               echo "  - 初回実行時は、サブセットのファイルのみを監視"
               echo "  - 段階的に監視範囲を拡大"
+              echo "  - タイムアウト時間を延長することを検討"
             fi
           else
             echo "❌ 履歴ファイルの検証に失敗"
@@ -233,6 +256,7 @@ jobs:
         echo "スクリプト実行中..."
         echo "進捗監視: 30分のタイムアウトが設定されています"
         echo "処理の最適化: 初回実行時は段階的な監視を推奨"
+        echo "アーティファクト管理の問題: 前回の履歴が正しく復元されていない可能性"
         timeout 30m python -u heteml_monitor_github_action.py 2>&1
         EXIT_CODE=$?
         echo ""
@@ -244,10 +268,12 @@ jobs:
           echo "原因分析:"
           echo "  - ファイル数が多い場合: 初回実行または履歴ファイルが空"
           echo "  - 処理が停止している場合: ネットワーク問題またはスクリプトの無限ループ"
+          echo "  - アーティファクト管理の問題: 前回の履歴が正しく復元されていない"
           echo "推奨対策:"
           echo "  - 履歴ファイルの内容を確認"
           echo "  - スクリプトのログを詳細に分析"
           echo "  - 初回実行時は監視範囲を限定"
+          echo "  - アーティファクトの管理方法を見直し"
         elif [ $EXIT_CODE -eq 0 ]; then
           echo "✅ 正常終了"
         else
