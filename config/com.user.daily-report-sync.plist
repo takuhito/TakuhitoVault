@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.daily-report-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/takuhito/NotionWorkflowTools/scripts/sync_daily_report.py</string>
+        <string>--file</string>
+        <string>/Users/takuhito/Documents/daily-reports/$(date +%Y-%m-%d).md</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/takuhito/NotionWorkflowTools</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>PathState</key>
+        <dict>
+            <key>/Users/takuhito/Documents/daily-reports</key>
+            <true/>
+        </dict>
+    </dict>
+
+    <key>WatchPaths</key>
+    <array>
+        <string>/Users/takuhito/Documents/daily-reports</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/takuhito/NotionWorkflowTools/logs/daily_report_sync.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/takuhito/NotionWorkflowTools/logs/daily_report_sync_error.log</string>
+</dict>
+</plist>
+

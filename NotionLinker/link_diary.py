@@ -24,6 +24,7 @@ NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 JOURNAL_DB_ID = os.getenv("JOURNAL_DB_ID")
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() in ("1", "true", "yes")
 NOTION_TIMEOUT = int(os.getenv("NOTION_TIMEOUT", "60"))  # 秒
+ACTION_MATCH_OFFSET_DAYS = int(os.getenv("ACTION_MATCH_OFFSET_DAYS", "0"))
 
 # データベース設定（修正版）
 DATABASES = {
@@ -225,6 +226,25 @@ def set_relation(page_id: str, journal_page_id: str, relation_prop: str):
         )
     with_retry(_call, what="pages.update")
 
+def _apply_match_offset_if_needed(db_name: str, match_text: str) -> str:
+    """一部DB（行動）に対して一致用日付のオフセット（日数）を適用する。
+
+    - 環境変数 ACTION_MATCH_OFFSET_DAYS を参照（デフォルト0）。
+    - match_text が YYYY-MM-DD のときのみ適用。
+    """
+    if db_name != "行動":
+        return match_text
+    if not ACTION_MATCH_OFFSET_DAYS:
+        return match_text
+    try:
+        # YYYY-MM-DD を日付として解釈し、日数オフセット後に再フォーマット
+        dt = datetime.strptime(match_text, "%Y-%m-%d")
+        dt2 = dt + timedelta(days=ACTION_MATCH_OFFSET_DAYS)
+        return dt2.date().isoformat()
+    except Exception:
+        # パース不可ならそのまま返す
+        return match_text
+
 def retrieve_page(page_id: str) -> Dict[str, Any]:
     def _call():
         return notion.pages.retrieve(page_id=page_id)
@@ -272,11 +292,18 @@ def process_database(db_name: str, db_config: Dict[str, Any]):
             print(f"[{i}/{len(pages)}] 一致用日付が空でスキップ")
             continue
 
-        print(f"[{i}/{len(pages)}] match='{match_text}' → DailyJournal を検索")
-        journal = find_journal_by_match(match_text)
+        # 必要に応じて一致用日付へ日数オフセットを適用
+        adjusted_match = _apply_match_offset_if_needed(db_name, match_text)
+        if adjusted_match != match_text:
+            print(f"[{i}/{len(pages)}] match='{match_text}' → adjusted='{adjusted_match}'")
+        else:
+            print(f"[{i}/{len(pages)}] match='{match_text}' → DailyJournal を検索")
+
+        lookup_key = adjusted_match
+        journal = find_journal_by_match(lookup_key)
         if not journal:
             print("  該当なし → 作成")
-            journal = create_journal_page(match_text)
+            journal = create_journal_page(lookup_key)
 
         new_id = journal["id"]
         print(f"  リレーション設定: {page_id} -> {new_id}")
