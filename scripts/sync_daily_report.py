@@ -259,7 +259,8 @@ def replace_page_children(page_id: str, children: List[Dict[str, Any]]):
 # ---------- メイン処理 ----------
 def sync_daily_report(file_path: Path):
     if not file_path.exists():
-        raise FileNotFoundError(str(file_path))
+        print(f"対象ファイルが存在しません: {file_path}")
+        return
 
     title_text = date_title_from_filename(file_path)
     content = file_path.read_text(encoding="utf-8")

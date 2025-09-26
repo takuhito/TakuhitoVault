@@ -2,8 +2,13 @@
 
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# 1) スクリプト直下の .env 2) プロジェクト直下の .env を順に読み込む
+current_dir = Path(__file__).resolve().parent
+project_root = Path('/Users/takuhito/NotionWorkflowTools')
+load_dotenv(dotenv_path=current_dir / '.env')
+load_dotenv(dotenv_path=project_root / '.env', override=False)
 
 # MovableType設定
 MT_CONFIG = {

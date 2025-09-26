@@ -27,6 +27,11 @@ class ServiceMonitor:
     def __init__(self):
         self.logger = self._setup_logger()
         self.config = self._load_config()
+        # 通知制御
+        notif_cfg = self.config.get('notification', {})
+        self.notify_success = bool(notif_cfg.get('notify_success', True))
+        self.notification_cooldown_seconds = int(notif_cfg.get('cooldown_seconds', 0) or 0)
+        self._last_notify_times = {}  # key: subject -> datetime
         self.services = {
             'heteml_monitor': {
                 'name': 'HETEMLMonitor',
@@ -42,6 +47,7 @@ class ServiceMonitor:
                 'plist': 'com.tkht.notion-linker.plist',
                 'plist_path': PROJECT_ROOT / 'NotionLinker' / 'config' / 'com.tkht.notion-linker.plist',
                 'log_dir': Path('/Users/takuhito/Library/Logs'),
+                'log_glob': 'notion-linker.*.log',
                 'check_interval': 900,  # 15分
                 'last_check': None,
                 'status': 'unknown'
@@ -56,6 +62,8 @@ class ServiceMonitor:
                 'status': 'unknown'
             }
         }
+        # 無効化サービス（設定ファイルから）
+        self.disabled_services = set(self.config.get('disabled_services', []))
     
     def _setup_logger(self):
         """ロガーの設定"""
@@ -112,11 +120,14 @@ class ServiceMonitor:
         """launchdサービスの状態確認"""
         try:
             # launchctl print でサービスの詳細情報を取得
+            uid = os.getuid()
+            # ラベル名に正規化（.plist 拡張子を除去）
+            label = os.path.splitext(os.path.basename(plist_name))[0]
             result = subprocess.run(
-                ['launchctl', 'print', f'gui/$(id -u)/{plist_name}'],
+                ['launchctl', 'print', f'gui/{uid}/{label}'],
                 capture_output=True,
                 text=True,
-                shell=True
+                shell=False
             )
             
             if result.returncode == 0:
@@ -136,14 +147,15 @@ class ServiceMonitor:
             self.logger.error(f"launchd service check error for {service_name}: {e}")
             return 'error'
     
-    def check_log_files(self, service_name, log_dir):
+    def check_log_files(self, service_name, log_dir, log_glob: str | None = None):
         """ログファイルの確認"""
         try:
             if not log_dir.exists():
                 return {'status': 'no_logs', 'message': 'ログディレクトリが存在しません'}
             
             # 最近のログファイルを確認
-            log_files = list(log_dir.glob('*.log'))
+            pattern = log_glob if log_glob else '*.log'
+            log_files = list(log_dir.glob(pattern))
             if not log_files:
                 return {'status': 'no_logs', 'message': 'ログファイルが存在しません'}
             
@@ -151,13 +163,34 @@ class ServiceMonitor:
             latest_log = max(log_files, key=lambda x: x.stat().st_mtime)
             log_age = time.time() - latest_log.stat().st_mtime
             
-            # ログファイルの内容を確認
-            with open(latest_log, 'r', encoding='utf-8') as f:
-                content = f.read()
+            # ログファイルの内容（直近のみ）を確認 - 末尾200行だけで判定
+            from collections import deque
+            with open(latest_log, 'r', encoding='utf-8', errors='ignore') as f:
+                tail_lines = deque(f, maxlen=200)
+            content = ''.join(tail_lines)
             
             # エラーの検出
             error_indicators = ['error', 'Error', 'ERROR', 'failed', 'Failed', 'FAILED']
             has_errors = any(indicator in content for indicator in error_indicators)
+
+            # 直近の成功指標がエラーより後なら正常扱い
+            success_indicators = [
+                'recovered successfully',
+                'Authentication (password) successful',
+                '接続しました',
+                'restarted successfully'
+            ]
+            def last_index_of_any(text: str, keywords: list[str]) -> int:
+                idx = -1
+                for kw in keywords:
+                    pos = text.rfind(kw)
+                    if pos > idx:
+                        idx = pos
+                return idx
+            last_err = last_index_of_any(content, error_indicators)
+            last_ok = last_index_of_any(content, success_indicators)
+            if last_ok >= 0 and last_ok > last_err:
+                has_errors = False
             
             return {
                 'status': 'ok' if not has_errors else 'error',
@@ -209,7 +242,20 @@ class ServiceMonitor:
         """通知の送信"""
         if not self.config['notification']['enabled']:
             return
-        
+        # 成功通知の抑止
+        if not self.notify_success and ('自動復旧完了' in subject or 'recovered' in subject.lower()):
+            self.logger.debug(f"Skip success notification by setting: {subject}")
+            return
+
+        # クールダウン（同一件名の連投抑止）
+        if self.notification_cooldown_seconds > 0:
+            last = self._last_notify_times.get(subject)
+            if last is not None:
+                delta = (datetime.now() - last).total_seconds()
+                if delta < self.notification_cooldown_seconds:
+                    self.logger.info(f"Skip notification by cooldown ({int(delta)}s < {self.notification_cooldown_seconds}s): {subject}")
+                    return
+
         try:
             email_config = self.config['email']
             
@@ -226,6 +272,8 @@ class ServiceMonitor:
                 server.send_message(msg)
             
             self.logger.info(f"Notification sent: {subject}")
+            # 記録
+            self._last_notify_times[subject] = datetime.now()
             
         except Exception as e:
             self.logger.error(f"Notification error: {e}")
@@ -242,23 +290,64 @@ class ServiceMonitor:
         # launchdサービスの状態確認
         launchd_status = self.check_launchd_service(service_name, plist_name)
         
-        # ログファイルの確認
-        log_status = self.check_log_files(service_name, log_dir)
+        # ログファイルの確認（サービス個別指定があれば反映）
+        log_status = self.check_log_files(service_name, log_dir, service_info.get('log_glob'))
         
-        # 状態の判定
-        if launchd_status == 'running' and log_status['status'] == 'ok':
-            status = 'healthy'
-        elif launchd_status == 'stopped':
-            status = 'stopped'
-        elif log_status['status'] == 'error':
+        # 状態の判定（スケジュール型ジョブを考慮）
+        status = 'unknown'
+        if log_status['status'] == 'error':
             status = 'error'
         else:
-            status = 'unknown'
+            # デフォルトはログ鮮度で判定（チェック間隔+猶予2分以内ならOK）
+            log_fresh_enough = (
+                'log_age' in log_status and
+                isinstance(log_status.get('log_age'), (int, float)) and
+                log_status['log_age'] <= (service_info.get('check_interval', 600) + 120)
+            )
+
+            if service_name in ('HETEMLMonitor', 'NotionLinker'):
+                if log_fresh_enough:
+                    status = 'healthy'
+                elif launchd_status == 'running' and log_status['status'] == 'ok':
+                    status = 'healthy'
+                elif launchd_status == 'stopped':
+                    status = 'stopped'
+                else:
+                    status = 'unknown'
+            elif service_name == 'MovableTypeRebuilder':
+                # 毎月1日以外は非稼働が正常。ログにエラーが無ければOK
+                today = datetime.now().day
+                if today != 1:
+                    status = 'healthy'
+                else:
+                    # 1日だけは直近実行のログ鮮度を確認
+                    if log_fresh_enough:
+                        status = 'healthy'
+                    elif launchd_status == 'stopped':
+                        status = 'stopped'
+                    else:
+                        status = 'unknown'
+            else:
+                if launchd_status == 'running' and log_status['status'] == 'ok':
+                    status = 'healthy'
+                elif launchd_status == 'stopped':
+                    status = 'stopped'
+                else:
+                    status = 'unknown'
         
         # 状態の更新
         self.services[service_key]['status'] = status
         self.services[service_key]['last_check'] = datetime.now()
         
+        # MovableTypeRebuilder は毎月1日以外は通知・復旧対象外（非実行が正常）
+        if service_name == 'MovableTypeRebuilder' and datetime.now().day != 1:
+            return {
+                'service': service_name,
+                'launchd_status': 'stopped',
+                'log_status': log_status,
+                'overall_status': 'healthy'
+            }
+
         # 問題の検出と復旧
         if status in ['stopped', 'error']:
             self.logger.warning(f"{service_name} has issues: {status}")
@@ -306,6 +395,16 @@ class ServiceMonitor:
         current_time = datetime.now()
         
         for service_key, service_info in self.services.items():
+            # 監視無効化チェック
+            if service_info['name'] in self.disabled_services or service_key in self.disabled_services:
+                self.logger.info(f"Skip disabled service: {service_info['name']}")
+                results.append({
+                    'service': service_info['name'],
+                    'launchd_status': 'disabled',
+                    'log_status': {'status': 'skipped', 'message': '監視対象外'},
+                    'overall_status': 'disabled'
+                })
+                continue
             # チェック間隔の確認
             if (service_info['last_check'] is None or 
                 (current_time - service_info['last_check']).total_seconds() >= service_info['check_interval']):

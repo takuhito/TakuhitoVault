@@ -7,7 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
+        <string>/Users/takuhito/NotionWorkflowTools/venv/bin/python</string>
         <string>/Users/takuhito/NotionWorkflowTools/scripts/monitor_all_services.py</string>
         <string>--continuous</string>
     </array>

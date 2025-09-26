@@ -37,6 +37,15 @@ Notionと連携したワークフロー自動化ツール群
 - **機能**: ページ間の関連性管理
 - **状態**: 本番運用中
 
+### 🔄 n8n Workflows (新規追加)
+- **概要**: n8nを使用したワークフロー自動化
+- **機能**: 
+  - NotionLinkerの自動実行・手動実行
+  - ビジュアルワークフロー管理
+  - エラーハンドリング・通知機能
+- **状態**: セットアップ完了、運用準備中
+- **場所**: `n8n_workflows/`
+
 ## 環境設定
 
 ### 必要な環境変数
@@ -74,6 +83,7 @@ NOTION_DATABASE_ID=your_database_id
 - SFTP/SSH (paramiko)
 - launchd (macOS)
 - Markdown解析・変換
+- n8n (ワークフロー自動化)
 
 ## ライセンス
 
@@ -81,6 +91,7 @@ MIT License
 
 ## 更新履歴
 
+- 2025/01/09: n8n Workflows追加、NotionLinker自動化ワークフロー作成
 - 2025/09/01: HETEMLMonitor GitHub Actions版開発中止、プロジェクト整理完了
 - 2025/08/29: 全プロジェクトの基本機能完了
 - 2025/08/28: プロジェクト基盤構築

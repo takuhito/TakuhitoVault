@@ -6,7 +6,8 @@
 set -e
 
 # 設定
-CHAT_HISTORY_DIR="chat_history"
+# 保存先をChatHistoryToNotion/chat_historyに統一
+CHAT_HISTORY_DIR="ChatHistoryToNotion/chat_history"
 DATE=$(date +"%Y%m%d")
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
@@ -14,6 +15,11 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 PROJECT_NAME=${1:-"General"}
 DESCRIPTION=${2:-"Chat_History"}
 CHAT_CONTENT_FILE=${3:-""}
+# 第4引数: 出力モード（raw|full）。既定はraw（チャット本文最優先）
+OUTPUT_MODE=${4:-"raw"}
+
+# 上書き許可（既存ファイルに追記ではなく上書き）
+ALLOW_OVERWRITE=${ALLOW_OVERWRITE:-"false"}
 
 # 自動プロジェクト名と説明の生成
 if [ "$PROJECT_NAME" = "General" ] && [ "$DESCRIPTION" = "Chat_History" ]; then
@@ -68,11 +74,9 @@ fi
 echo ""
 
 # ファイルが既に存在する場合の処理
-if [ -f "$FILEPATH" ]; then
+if [ -f "$FILEPATH" ] && [ "$ALLOW_OVERWRITE" != "true" ]; then
     echo "⚠️  ファイルが既に存在します: $FILEPATH"
     echo "新しいファイル名を生成します..."
-    
-    # タイムスタンプ付きのファイル名を生成
     FILENAME="${DATE}_${PROJECT_NAME}_${DESCRIPTION}_${TIMESTAMP}.md"
     FILEPATH="$CHAT_HISTORY_DIR/$FILENAME"
     echo "新しいファイル名: $FILENAME"
@@ -93,72 +97,74 @@ elif [ -n "$CHAT_CONTENT_FILE" ]; then
     echo "手動でチャット内容を入力してください"
     CHAT_CONTENT="<!-- ここにチャットの内容を貼り付けてください -->"
 else
-    echo "📋 クリップボードからチャット内容を取得中..."
-    
-    # macOSの場合、pbpasteを使用
-    if command -v pbpaste >/dev/null 2>&1; then
-        CHAT_CONTENT=$(pbpaste 2>/dev/null || echo "<!-- クリップボードから内容を取得できませんでした。手動で貼り付けてください -->")
-        if [ -n "$CHAT_CONTENT" ] && [ "$CHAT_CONTENT" != "<!-- クリップボードから内容を取得できませんでした。手動で貼り付けてください -->" ]; then
-            echo "✅ クリップボードからチャット内容を取得しました"
-        else
-            echo "⚠️  クリップボードに内容がないか、取得できませんでした"
-            CHAT_CONTENT="<!-- ここにチャットの内容を貼り付けてください -->"
+    # クリップボードは使用しない方針。標準入力またはファイル指定が必須
+    if [ ! -t 0 ]; then
+        CHAT_CONTENT=$(cat -)
+        if [ -n "$CHAT_CONTENT" ]; then
+            echo "✅ 標準入力からチャット内容を取得しました"
         fi
-    else
-        echo "⚠️  pbpasteコマンドが見つかりません。手動でチャット内容を入力してください"
-        CHAT_CONTENT="<!-- ここにチャットの内容を貼り付けてください -->"
+    fi
+
+    # 最終チェック: 空または短文なら安全のため中断
+    MIN_LEN=${MIN_LEN:-50}
+    if [ -z "$CHAT_CONTENT" ] || [ ${#CHAT_CONTENT} -lt $MIN_LEN ]; then
+        echo "❌ チャット本文が取得できませんでした（または短すぎます）。保存を中断します。" >&2
+        echo "   クリップボードは使用しません。以下のいずれかで再実行してください:" >&2
+        echo "   1) ファイル指定:  ALLOW_OVERWRITE=true ./scripts/save_chat_history.sh \"Proj\" \"Desc\" /tmp/chat.md raw" >&2
+        echo "   2) 標準入力:    cat /tmp/chat.md | ALLOW_OVERWRITE=true ./scripts/save_chat_history.sh \"Proj\" \"Desc\" - raw" >&2
+        exit 2
     fi
 fi
 
 echo ""
 
-# 成果と技術的詳細の自動生成
+# 成果などの自動生成（fullモードのみ）
 ACHIEVEMENTS=""
 TECHNICAL_DETAILS=""
 NEXT_STEPS=""
-
-# チャット内容から成果を自動検出
-if [ -n "$CHAT_CONTENT" ] && [ "$CHAT_CONTENT" != "<!-- ここにチャットの内容を貼り付けてください -->" ] && [ "$CHAT_CONTENT" != "<!-- クリップボードから内容を取得できませんでした。手動で貼り付けてください -->" ]; then
-    echo "🔍 チャット内容から成果を自動検出中..."
-    
-    # 成果のキーワード検索
-    if echo "$CHAT_CONTENT" | grep -qi "完成\|完了\|実装\|作成\|追加\|修正\|修正\|解決\|成功"; then
-        ACHIEVEMENTS="- [x] チャット履歴自動保存スクリプトの実装
-- [x] プロジェクト名と説明の自動入力機能
-- [x] クリップボードからの自動取得機能
-- [x] 成果の自動検出機能"
-    else
-        ACHIEVEMENTS="- [ ] タスク1
-- [ ] タスク2
-- [ ] タスク3"
-    fi
-    
-    # 技術的詳細の自動生成
-    TECHNICAL_DETAILS="- 使用した技術: Bash, macOS, pbpaste, Markdown
-- 解決した問題: チャット履歴の手動保存の自動化
-- 学んだこと: シェルスクリプトでのクリップボード操作、自動ファイル生成"
-    
-    # 次のステップの自動生成
-    NEXT_STEPS="- [ ] 他のプロジェクトでの活用
-- [ ] 機能の拡張（検索機能など）
-- [ ] ドキュメントの更新"
-    
-    echo "✅ 成果と技術的詳細を自動生成しました"
-else
-    ACHIEVEMENTS="- [ ] タスク1
-- [ ] タスク2
-- [ ] タスク3"
-    
-    TECHNICAL_DETAILS="- 使用した技術:
-- 解決した問題:
-- 学んだこと:"
-    
-    NEXT_STEPS="- [ ] 次のアクション1
-- [ ] 次のアクション2"
+if [ "$OUTPUT_MODE" = "full" ]; then
+  if [ -n "$CHAT_CONTENT" ] && [ "$CHAT_CONTENT" != "<!-- ここにチャットの内容を貼り付けてください -->" ] && [ "$CHAT_CONTENT" != "<!-- クリップボードから内容を取得できませんでした。手動で貼り付けてください -->" ]; then
+      echo "🔍 チャット内容から成果を自動検出中..."
+      if echo "$CHAT_CONTENT" | grep -qi "完成\|完了\|実装\|作成\|追加\|修正\|解決\|成功"; then
+          ACHIEVEMENTS="- [x] 主要タスクの完了を確認"
+      else
+          ACHIEVEMENTS="- [ ] タスク項目の記録"
+      fi
+      TECHNICAL_DETAILS="- 使用した技術・論点の記録"
+      NEXT_STEPS="- [ ] 次のアクションの記録"
+      echo "✅ 成果と技術的詳細を自動生成しました"
+  fi
 fi
 
 # チャット履歴のテンプレートを作成
-cat > "$FILEPATH" << EOF
+if [ "$OUTPUT_MODE" = "raw" ]; then
+  cat > "$FILEPATH" << EOF
+# チャット履歴（RAW）
+
+**日付**: $(date +"%Y年%m月%d日")  
+**プロジェクト**: $PROJECT_NAME  
+**説明**: $DESCRIPTION  
+**参加者**: ユーザー、AI アシスタント
+
+---
+
+## チャット開始
+
+**開始時刻**: $(date +"%Y-%m-%d %H:%M:%S")
+
+---
+
+## チャット内容（全文）
+
+$CHAT_CONTENT
+
+---
+
+**作成日**: $(date +"%Y年%m月%d日")  
+**ファイル**: $FILENAME
+EOF
+else
+  cat > "$FILEPATH" << EOF
 # チャット履歴
 
 **日付**: $(date +"%Y年%m月%d日")  
@@ -198,6 +204,7 @@ $NEXT_STEPS
 **作成日**: $(date +"%Y年%m月%d日")  
 **ファイル**: $FILENAME
 EOF
+fi
 
 echo "✅ チャット履歴テンプレートを作成しました: $FILEPATH"
 
