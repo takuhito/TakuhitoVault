@@ -94,8 +94,9 @@ jobs:
         echo "=== .envファイルの確認 ==="
         cat .env
         
-        # Pythonスクリプト実行
-        python scripts/mt_rebuilder_github_action.py
+        # Pythonスクリプト実行（PYTHONPATH設定）
+        cd /home/runner/work/TakuhitoVault/TakuhitoVault/MovableTypeRebuilder
+        PYTHONPATH=/home/runner/work/TakuhitoVault/TakuhitoVault/MovableTypeRebuilder:$PYTHONPATH python scripts/mt_rebuilder_github_action.py
         echo "=== MovableType再構築完了 ==="
         echo "完了時刻: $(date)"
         
