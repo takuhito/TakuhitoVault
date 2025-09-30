@@ -80,6 +80,11 @@ class MovableTypeRebuilderGitHubAction:
             import requests
             self.session = requests.Session()
             
+            # User-Agentヘッダーを設定
+            self.session.headers.update({
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            })
+            
             self.logger.info("MovableTypeにログイン中...")
             self.logger.info(f"ログインURL: {self.mt_url}")
             self.logger.info(f"ユーザー名: {self.mt_username}")
