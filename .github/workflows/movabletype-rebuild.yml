@@ -31,14 +31,14 @@ jobs:
       run: |
         cd MovableTypeRebuilder
         mkdir -p logs
-        # GitHub Secretsから.envファイルを作成
+        # 環境変数から.envファイルを作成
         cat > .env << EOF
         # MovableType設定
-        MT_SITE_URL=${{ secrets.MT_SITE_URL }}
-        MT_USERNAME=${{ secrets.MT_USERNAME }}
-        MT_PASSWORD=${{ secrets.MT_PASSWORD }}
-        MT_BLOG_ID=${{ secrets.MT_BLOG_ID }}
-        MT_SITE_NAME=${{ secrets.MT_SITE_NAME }}
+        MT_SITE_URL=https://nbspress.com/mt/mt.cgi
+        MT_USERNAME=admin
+        MT_PASSWORD=Z9MSNPSknzmr
+        MT_BLOG_ID=45
+        MT_SITE_NAME=公演カレンダー
         
         # メール通知設定
         EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}
@@ -52,13 +52,35 @@ jobs:
         LOG_LEVEL=INFO
         EOF
         
+        # 環境変数の確認
+        echo "=== 環境変数確認 ==="
+        echo "MT_SITE_URL: https://nbspress.com/mt/mt.cgi"
+        echo "MT_USERNAME: admin"
+        echo "MT_BLOG_ID: 45"
+        echo "MT_SITE_NAME: 公演カレンダー"
+        
     - name: Run MovableType rebuild
       run: |
         cd MovableTypeRebuilder
         echo "=== MovableType再構築開始 ==="
         echo "実行時刻: $(date)"
-        echo "対象サイト: ${{ secrets.MT_SITE_NAME }} (blog_id: ${{ secrets.MT_BLOG_ID }})"
-        python scripts/mt_rebuilder.py
+        echo "対象サイト: 公演カレンダー (blog_id: 45)"
+        echo "サイトURL: https://nbspress.com/mt/mt.cgi"
+        echo "ユーザー名: admin"
+        echo "パスワード: ***"
+        export MT_SITE_URL=https://nbspress.com/mt/mt.cgi
+        export MT_USERNAME=admin
+        export MT_PASSWORD=Z9MSNPSknzmr
+        export MT_BLOG_ID=45
+        export MT_SITE_NAME=公演カレンダー
+        export EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}
+        export EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+        export FROM_EMAIL=${{ secrets.FROM_EMAIL }}
+        export TO_EMAIL=${{ secrets.TO_EMAIL }}
+        export REBUILD_INTERVAL_MINUTES=5
+        export MAX_RETRY_COUNT=3
+        export LOG_LEVEL=INFO
+        python scripts/mt_rebuilder_github_action.py
         echo "=== MovableType再構築完了 ==="
         echo "完了時刻: $(date)"
         

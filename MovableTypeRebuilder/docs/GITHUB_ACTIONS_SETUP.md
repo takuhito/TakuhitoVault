@@ -18,7 +18,7 @@ GitHubリポジトリの設定で以下のシークレットを設定してく�
 - `MT_USERNAME`: MovableType管理者ユーザー名
   - 例: `admin`
 - `MT_PASSWORD`: MovableType管理者パスワード
-  - 例: `your_password`
+  - 例: `Z9MSNPSknzmr`
 - `MT_BLOG_ID`: 再構築対象のブログID
   - 例: `45`
 - `MT_SITE_NAME`: サイト名（通知用）

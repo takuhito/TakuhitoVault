@@ -88,7 +88,7 @@ class MovableTypeRebuilder:
             self.logger.info("MovableTypeにログイン中...")
             
             # まずログインページにGETでアクセスしてセッションを確立
-            login_page_url = f"{self.mt_url}?__mode=login"
+            login_page_url = self.mt_url
             self.logger.info(f"ログインページにアクセス: {login_page_url}")
             
             response = self.session.get(login_page_url, timeout=30)

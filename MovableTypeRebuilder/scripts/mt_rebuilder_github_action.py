@@ -81,17 +81,37 @@ class MovableTypeRebuilderGitHubAction:
             self.session = requests.Session()
             
             self.logger.info("MovableTypeにログイン中...")
+            self.logger.info(f"ログインURL: {self.mt_url}")
+            self.logger.info(f"ユーザー名: {self.mt_username}")
+            self.logger.info(f"パスワード: {'***' if self.mt_password else '未設定'}")
             
-            # ログインページにアクセスしてセッションを確立
-            login_url = f"{self.mt_url}/mt.cgi"
+            # まずログインページにGETでアクセスしてセッションを確立
+            login_page_url = self.mt_url
+            self.logger.info(f"ログインページにアクセス: {login_page_url}")
+            
+            response = self.session.get(login_page_url, timeout=30)
+            response.raise_for_status()
+            
+            # ログインフォームをPOSTで送信
+            login_url = self.mt_url
             login_data = {
                 'username': self.mt_username,
                 'password': self.mt_password,
                 '__mode': 'login'
             }
             
+            self.logger.info(f"ログインデータ送信: {login_url}")
             response = self.session.post(login_url, data=login_data, timeout=30)
             response.raise_for_status()
+            
+            # デバッグ情報をログに出力
+            self.logger.info(f"レスポンスステータス: {response.status_code}")
+            self.logger.info(f"クッキー数: {len(self.session.cookies)}")
+            self.logger.info(f"レスポンスサイズ: {len(response.text)} bytes")
+            
+            # レスポンスの一部をログに出力（デバッグ用）
+            response_preview = response.text[:500]
+            self.logger.info(f"レスポンスプレビュー: {response_preview}")
             
             # ログイン成功の確認（より柔軟な判定）
             success_indicators = ['ログアウト', 'logout', 'dashboard', '管理画面', '完了']
@@ -103,11 +123,14 @@ class MovableTypeRebuilderGitHubAction:
             # クッキーが設定されているかも確認
             has_cookies = len(self.session.cookies) > 0
             
+            self.logger.info(f"成功指標: {success_count}, 失敗指標: {failure_count}, クッキー: {has_cookies}")
+            
             if success_count > failure_count or has_cookies:
                 self.logger.info("ログイン成功")
                 return True
             else:
                 self.logger.error("ログイン失敗: 認証情報が正しくない可能性があります")
+                self.logger.error(f"詳細: 成功指標={success_count}, 失敗指標={failure_count}, クッキー={has_cookies}")
                 return False
                 
         except Exception as e:

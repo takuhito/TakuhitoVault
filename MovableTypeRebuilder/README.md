@@ -68,7 +68,7 @@ python scripts/mt_rebuilder.py --test
 
 - `MT_SITE_URL`: MovableTypeサイトのURL
 - `MT_USERNAME`: MovableType管理者ユーザー名
-- `MT_PASSWORD`: MovableType管理者パスワード
+- `MT_PASSWORD`: MovableType管理者パスワード (現在: Z9MSNPSknzmr)
 - `EMAIL_USERNAME`: メール送信用のユーザー名
 - `EMAIL_PASSWORD`: メール送信用のパスワード
 - `FROM_EMAIL`: 送信元メールアドレス

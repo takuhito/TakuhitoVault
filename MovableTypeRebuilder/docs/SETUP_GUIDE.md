@@ -27,7 +27,7 @@ cp env.example .env
 # MovableType設定
 MT_SITE_URL=https://your-movabletype-site.com
 MT_USERNAME=your_username
-MT_PASSWORD=your_password
+MT_PASSWORD=Z9MSNPSknzmr
 
 # メール通知設定
 EMAIL_USERNAME=your-email@gmail.com

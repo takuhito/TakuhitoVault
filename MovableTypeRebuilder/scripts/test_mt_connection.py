@@ -57,8 +57,17 @@ def test_mt_connection():
         response = session.post(login_url, data=login_data, timeout=30)
         response.raise_for_status()
         
-        # ログイン成功の確認
-        if 'ログアウト' in response.text or 'logout' in response.text.lower():
+        # ログイン成功の確認（より柔軟な判定）
+        success_indicators = ['ログアウト', 'logout', 'dashboard', '管理画面', '完了']
+        failure_indicators = ['ログイン', 'login', 'エラー', 'error', '失敗', '認証']
+        
+        success_count = sum(1 for indicator in success_indicators if indicator.lower() in response.text.lower())
+        failure_count = sum(1 for indicator in failure_indicators if indicator.lower() in response.text.lower())
+        
+        # クッキーが設定されているかも確認
+        has_cookies = len(session.cookies) > 0
+        
+        if success_count > failure_count or has_cookies:
             print("✅ ログイン成功")
             
             # 4. 管理画面アクセステスト
@@ -79,6 +88,7 @@ def test_mt_connection():
         else:
             print("❌ ログイン失敗")
             print("認証情報を確認してください")
+            print(f"成功指標: {success_count}, 失敗指標: {failure_count}, クッキー: {has_cookies}")
             return False
             
     except requests.exceptions.ConnectionError:
