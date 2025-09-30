@@ -68,6 +68,8 @@ jobs:
         echo "サイトURL: https://nbspress.com/mt/mt.cgi"
         echo "ユーザー名: admin"
         echo "パスワード: ***"
+        
+        # 環境変数を設定
         export MT_SITE_URL=https://nbspress.com/mt/mt.cgi
         export MT_USERNAME=admin
         export MT_PASSWORD=Z9MSNPSknzmr
@@ -80,6 +82,19 @@ jobs:
         export REBUILD_INTERVAL_MINUTES=5
         export MAX_RETRY_COUNT=3
         export LOG_LEVEL=INFO
+        
+        # 環境変数の確認
+        echo "=== 環境変数確認（export後） ==="
+        echo "MT_SITE_URL=$MT_SITE_URL"
+        echo "MT_USERNAME=$MT_USERNAME"
+        echo "MT_BLOG_ID=$MT_BLOG_ID"
+        echo "MT_SITE_NAME=$MT_SITE_NAME"
+        
+        # .envファイルの確認
+        echo "=== .envファイルの確認 ==="
+        cat .env
+        
+        # Pythonスクリプト実行
         python scripts/mt_rebuilder_github_action.py
         echo "=== MovableType再構築完了 ==="
         echo "完了時刻: $(date)"
