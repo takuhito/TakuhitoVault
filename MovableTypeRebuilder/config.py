@@ -7,27 +7,8 @@ from pathlib import Path
 # 1) スクリプト直下の .env 2) プロジェクト直下の .env を順に読み込む
 current_dir = Path(__file__).resolve().parent
 project_root = Path('/Users/takuhito/NotionWorkflowTools')
-
-# .envファイルのパスをデバッグ出力
-env_file_1 = current_dir / '.env'
-env_file_2 = project_root / '.env'
-print(f"DEBUG: Checking .env file 1: {env_file_1} (exists: {env_file_1.exists()})")
-print(f"DEBUG: Checking .env file 2: {env_file_2} (exists: {env_file_2.exists()})")
-
-# .envファイルを読み込む
-if env_file_1.exists():
-    print(f"DEBUG: Loading .env from {env_file_1}")
-    load_dotenv(dotenv_path=env_file_1)
-if env_file_2.exists():
-    print(f"DEBUG: Loading .env from {env_file_2}")
-    load_dotenv(dotenv_path=env_file_2, override=False)
-
-# デバッグ: 環境変数の確認
-print(f"DEBUG: MT_SITE_URL={os.getenv('MT_SITE_URL')}")
-print(f"DEBUG: MT_USERNAME={os.getenv('MT_USERNAME')}")
-print(f"DEBUG: MT_PASSWORD={'***' if os.getenv('MT_PASSWORD') else 'None'}")
-print(f"DEBUG: MT_BLOG_ID={os.getenv('MT_BLOG_ID')}")
-print(f"DEBUG: MT_SITE_NAME={os.getenv('MT_SITE_NAME')}")
+load_dotenv(dotenv_path=current_dir / '.env')
+load_dotenv(dotenv_path=project_root / '.env', override=False)
 
 # MovableType設定
 MT_CONFIG = {
