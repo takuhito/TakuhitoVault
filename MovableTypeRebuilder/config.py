@@ -10,6 +10,13 @@ project_root = Path('/Users/takuhito/NotionWorkflowTools')
 load_dotenv(dotenv_path=current_dir / '.env')
 load_dotenv(dotenv_path=project_root / '.env', override=False)
 
+# デバッグ: 環境変数の確認
+print(f"DEBUG: MT_SITE_URL={os.getenv('MT_SITE_URL')}")
+print(f"DEBUG: MT_USERNAME={os.getenv('MT_USERNAME')}")
+print(f"DEBUG: MT_PASSWORD={'***' if os.getenv('MT_PASSWORD') else 'None'}")
+print(f"DEBUG: MT_BLOG_ID={os.getenv('MT_BLOG_ID')}")
+print(f"DEBUG: MT_SITE_NAME={os.getenv('MT_SITE_NAME')}")
+
 # MovableType設定
 MT_CONFIG = {
     'site_url': os.getenv('MT_SITE_URL'),
